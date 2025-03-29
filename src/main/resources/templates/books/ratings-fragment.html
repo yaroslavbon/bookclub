@@ -1,0 +1,46 @@
+<!-- src/main/resources/templates/books/ratings-fragment.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="bookRatings(bookId, members, ratings, memberRatingsMap)">
+    <div th:if="${ratings != null && !ratings.isEmpty()}" class="mb-3">
+        <div class="row g-3">
+            <div th:each="member : ${members}" class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title mb-2 fw-semibold" th:text="${member.name}">Member Name</h6>
+
+                        <!-- Find rating from the map -->
+                        <div th:with="memberRating=${memberRatingsMap.get(member.id)}">
+                            <!-- If rating exists -->
+                            <div th:if="${memberRating != null}">
+                                <div th:if="${memberRating.didNotRead}" class="text-muted small">
+                                    Did not read this book
+                                </div>
+                                <div th:unless="${memberRating.didNotRead}" class="position-relative">
+                                    <div class="d-flex gap-3 text-muted small mb-2">
+                                        <div><strong>Readability:</strong> <span th:text="${memberRating.readabilityRating + '/5'}">4/5</span></div>
+                                        <div><strong>Content:</strong> <span th:text="${memberRating.contentRating + '/5'}">5/5</span></div>
+                                    </div>
+                                    <p th:if="${memberRating.comments}" class="mb-0 small text-muted" th:text="${memberRating.comments}">Comments</p>
+                                </div>
+                            </div>
+
+                            <!-- If no rating exists -->
+                            <div th:unless="${memberRating != null}" class="d-flex gap-2">
+                                <div class="text-muted small">
+                                    No rating from this member
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:if="${ratings == null || ratings.isEmpty()}" class="alert alert-light">
+        No ratings have been submitted yet.
+    </div>
+</div>
+</body>
+</html>

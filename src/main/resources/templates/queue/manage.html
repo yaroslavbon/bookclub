@@ -1,0 +1,111 @@
+<!-- src/main/resources/templates/queue/manage.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: html(content=~{::content}, scripts=~{::scripts}, title='Manage Queue')}">
+<head>
+    <title>Manage Queue</title>
+</head>
+<body>
+<th:block th:fragment="content">
+    <!-- Queue Management -->
+    <div class="bg-white rounded-lg shadow-md mb-4 overflow-hidden">
+        <div class="px-4 py-2 border-b d-flex justify-content-between align-items-center">
+            <h3 class="fs-5 fw-semibold mb-0">Manage Queue Order</h3>
+            <a th:href="@{/queue}" class="btn btn-outline-primary btn-sm">Back to Queue</a>
+        </div>
+
+        <div class="p-4">
+            <div th:if="${#lists.isEmpty(queueItems)}" class="alert alert-warning">
+                <p class="mb-0">No members are currently in the queue.</p>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(queueItems)}" class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Position</th>
+                        <th>Member</th>
+                        <th>Last Pick</th>
+                        <th>Total Picks</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${queueItems}" th:class="${
+                            item.position == 0 ? 'bg-primary bg-opacity-10' :
+                            (item.position == 1 ? 'bg-light' : '')}">
+                        <td>
+                                <span th:if="${item.position == 0}" class="badge bg-primary">
+                                    Current
+                                </span>
+                            <span th:if="${item.position == 1}" class="badge bg-secondary">
+                                    Next
+                                </span>
+                            <span th:if="${item.position > 1}" class="text-muted">
+                                    #<span th:text="${item.position + 1}">3</span>
+                                </span>
+                        </td>
+                        <td class="fw-medium" th:text="${item.member.name}">Member Name</td>
+                        <td class="text-muted">
+                                <span th:if="${item.lastPickDate}" th:text="${#temporals.format(item.lastPickDate, 'yyyy-MM-dd')}">
+                                    2025-01-05
+                                </span>
+                            <span th:unless="${item.lastPickDate}">Never</span>
+                        </td>
+                        <td class="text-muted" th:text="${item.totalPicks}">4</td>
+                        <td>
+                            <span th:if="${item.active}" class="badge bg-success">Active</span>
+                            <span th:unless="${item.active}" class="badge bg-danger">Inactive</span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <!-- Move Up button -->
+                                <form th:action="@{/queue/member/{id}/move-up(id=${item.member.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Move Up"
+                                            th:disabled="${item.position == 0}">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Move Down button -->
+                                <form th:action="@{/queue/member/{id}/move-down(id=${item.member.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Move Down"
+                                            th:disabled="${item.position == #lists.size(queueItems) - 1}">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Toggle Active button -->
+                                <form th:action="@{/queue/member/{id}/toggle-active(id=${item.member.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm"
+                                            th:title="${item.active ? 'Deactivate' : 'Activate'}"
+                                            th:class="${item.active ? 'btn-outline-danger' : 'btn-outline-success'}">
+                                        <i th:class="${item.active ? 'bi bi-x-circle' : 'bi bi-check-circle'}"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 bg-warning bg-opacity-10 border border-warning rounded p-4">
+                <h5 class="fw-semibold text-warning-emphasis mb-2">Queue Management Notes</h5>
+                <ul class="mt-2 mb-0 text-muted small">
+                    <li>Inactive members will be skipped in the rotation</li>
+                    <li>Use the up/down arrows to manually adjust the queue order</li>
+                    <li>Click "Rotate Queue" on the main queue page to complete the current turn and move to the next member</li>
+                    <li>Changes to the queue are saved automatically</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="scripts">
+    <!-- Any page-specific JavaScript would go here -->
+</th:block>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!-- src/main/resources/templates/books/list.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: html(content=~{::content}, scripts=~{::scripts}, title='Books')}">
+<head>
+    <title>Books</title>
+</head>
+<body>
+<th:block th:fragment="content">
+    <div class="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
+        <div class="px-4 py-2 border-b">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="fs-5 fw-semibold mb-0">Books</h3>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                    Add Book
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="p-4 bg-light border-b">
+            <form th:action="@{/books}" method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" id="search" name="search" th:value="${param.search}"
+                               class="form-control" placeholder="Search books...">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option th:each="statusOption : ${T(ca.yarbond.bookclub.model.BookStatus).values()}"
+                                    th:value="${statusOption}"
+                                    th:text="${statusOption.toString()}"
+                                    th:selected="${param.status != null && param.status[0] == statusOption.toString()}">
+                                Status
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="ownerId" class="form-label">Owner</label>
+                        <select id="ownerId" name="ownerId" class="form-select">
+                            <option value="">All Owners</option>
+                            <option th:each="member : ${members}"
+                                    th:value="${member.id}"
+                                    th:text="${member.name}"
+                                    th:selected="${param.ownerId != null && param.ownerId[0] == member.id.toString()}">
+                                Member
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-sm btn-secondary">Apply Filters</button>
+                        <a th:href="@{/books}" class="btn btn-link">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Books List -->
+        <div class="p-4">
+            <div th:if="${#lists.isEmpty(books)}" class="text-center py-5">
+                <p class="text-muted">No books match your filters.</p>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(books)}" class="list-group">
+                <div th:each="book : ${books}" class="list-group-item list-group-item-action p-0">
+                    <!-- Book Summary Row -->
+                    <div class="d-flex w-100 p-3 book-summary cursor-pointer"
+                         th:attr="data-book-id=${book.id}" onclick="toggleBookDetails(this)">
+                        <div class="me-3 flex-shrink-0">
+                            <img th:if="${book.coverImagePath}"
+                                 th:src="@{'/files/covers/' + ${book.coverImagePath}}"
+                                 class="border rounded" style="width: 70px; height: 100px; object-fit: cover;" alt="Book cover">
+                            <div th:unless="${book.coverImagePath}"
+                                 class="bg-light d-flex align-items-center justify-content-center text-muted small border rounded"
+                                 style="width: 70px; height: 100px;">
+                                No Cover
+                            </div>
+                        </div>
+
+                        <div class="flex-grow-1 me-3">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="mb-1 fw-semibold" th:text="${book.title}">Book Title</h5>
+                                <span th:if="${book.status}"
+                                      th:class="${'badge ' +
+                                                 (book.status.name() == 'CURRENT' ? 'bg-success' :
+                                                  book.status.name() == 'WISHLIST' ? 'bg-warning text-dark' :
+                                                  book.status.name() == 'NEXT' ? 'bg-primary' :
+                                                  'bg-secondary')}">
+                                    <span th:text="${book.status.name() == 'CURRENT' ? 'Currently Reading' :
+                                                   book.status.name() == 'WISHLIST' ? 'Wishlist' :
+                                                   book.status.name() == 'NEXT' ? 'Next' :
+                                                   'Completed'}">Status</span>
+                                </span>
+                            </div>
+                            <p class="mb-1 text-secondary" th:text="${book.author}">Author</p>
+                            <div class="small text-muted">
+                                <span class="me-3">Owner: <span th:text="${book.owner.name}">Owner</span></span>
+                                <span class="me-3" th:text="${book.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span>
+                                <span th:if="${book.completionDate}">Completed: <span th:text="${#temporals.format(book.completionDate, 'yyyy-MM-dd')}">Date</span></span>
+                            </div>
+                            <p th:if="${book.comments}" class="small text-muted mt-1" th:text="${book.comments}">Comments</p>
+                        </div>
+
+                        <div class="flex-shrink-0 d-flex align-items-center">
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </div>
+
+                    <!-- Expanded Book Details with Ratings -->
+                    <div th:id="'book-details-' + ${book.id}" class="p-3 bg-light border-top book-details" style="display: none;">
+                        <h6 class="fw-semibold mb-3">Member Ratings</h6>
+
+                        <div th:if="${book.status != null && book.status.name() == 'COMPLETED'}">
+                            <div class="mb-4" th:id="'ratings-container-' + ${book.id}">
+                                <!-- This will be loaded with AJAX when expanded -->
+                                <div class="text-center">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span class="ms-2">Loading ratings...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div th:unless="${book.status != null && book.status.name() == 'COMPLETED'}">
+                            <p class="text-muted">Ratings will be available once this book is completed.</p>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <div>
+                                <a th:if="${book.status != null && book.status.name() == 'COMPLETED'}"
+                                   th:href="@{/books/{id}#rate(id=${book.id})}"
+                                   class="btn btn-sm btn-outline-primary me-2">Rate Book</a>
+
+                                    <form th:if="${book.status != null && book.status.name() == 'WISHLIST'}"
+                                          th:action="@{/books/{id}/set-next(id=${book.id})}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Select as Next</button>
+                                    </form>
+
+                                <div th:if="${!#maps.isEmpty(book.filePaths)}" class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                        Downloads
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li th:each="file : ${book.filePaths.entrySet()}">
+                                            <a class="dropdown-item" th:href="@{'/files/books/' + ${file.value}}" th:text="${file.key.toUpperCase()}">Format</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div>
+                                <a class="btn btn-sm btn-primary" th:href="@{/books/{id}(id=${book.id})}">Book info</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div class="modal fade" id="addBookModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Book</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/books}" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="author" class="form-label">Author</label>
+                            <input type="text" class="form-control" id="author" name="author" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="fiction" name="fiction">
+                                <label class="form-check-label" for="fiction">
+                                    Fiction
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="owner.id" class="form-label">Owner</label>
+                            <select class="form-select" id="owner.id" name="owner.id" required>
+                                <option value="">Select Owner</option>
+                                <option th:each="member : ${members}" th:value="${member.id}" th:text="${member.name}">Member</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="status" value="WISHLIST">
+                        <div class="form-text mb-3">
+                            <small class="text-muted">New books are always added to your wishlist.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="comments" class="form-label">Comments</label>
+                            <textarea class="form-control" id="comments" name="comments" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Book</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="scripts">
+    <script>
+        // Toggle book details visibility
+        function toggleBookDetails(element) {
+            const bookId = element.getAttribute('data-book-id');
+            const detailsElement = document.getElementById(`book-details-${bookId}`);
+
+            if (detailsElement) {
+                const isVisible = detailsElement.style.display !== 'none';
+                detailsElement.style.display = isVisible ? 'none' : 'block';
+
+                // Update the icon
+                const icon = element.querySelector('.bi');
+                if (icon) {
+                    icon.classList.toggle('bi-chevron-down', isVisible);
+                    icon.classList.toggle('bi-chevron-up', !isVisible);
+                }
+
+                // Load ratings if showing details and book is completed
+                if (!isVisible) {
+                    const statusBadge = element.querySelector('.badge');
+                    if (statusBadge && statusBadge.textContent.trim() === 'Completed') {
+                        loadBookRatings(bookId);
+                    }
+                }
+            }
+        }
+
+        // Load book ratings via AJAX
+        function loadBookRatings(bookId) {
+            const container = document.getElementById(`ratings-container-${bookId}`);
+            if (!container) return;
+
+            // Check if ratings are already loaded
+            if (container.getAttribute('data-loaded') === 'true') return;
+
+            fetch(`${contextPath}/books/${bookId}/ratings-fragment`)
+                .then(response => response.text())
+                .then(html => {
+                    container.innerHTML = html;
+                    container.setAttribute('data-loaded', 'true');
+                })
+                .catch(error => {
+                    container.innerHTML = `<div class="alert alert-danger">Error loading ratings: ${error.message}</div>`;
+                });
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add Bootstrap icons
+            document.querySelectorAll('.book-summary').forEach(element => {
+                const icon = element.querySelector('.bi');
+                if (icon) {
+                    icon.classList.add('bi-chevron-down');
+                }
+            });
+
+            // Check URL hash to expand a specific book
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#book-')) {
+                const bookId = hash.substring(6); // Remove '#book-'
+                const bookElement = document.querySelector(`[data-book-id="${bookId}"]`);
+                if (bookElement) {
+                    toggleBookDetails(bookElement);
+                    bookElement.scrollIntoView();
+                }
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>

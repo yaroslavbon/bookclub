@@ -1,0 +1,302 @@
+<!-- src/main/resources/templates/index.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: html(content=~{::content}, scripts=~{::scripts}, title='Home')}">
+<head>
+    <title>Home</title>
+</head>
+<body>
+<th:block th:fragment="content">
+    <!-- Currently Reading Section -->
+    <div th:if="${currentBook}" class="bg-white rounded-lg shadow-md mb-4 overflow-hidden">
+        <div class="bg-success text-white px-4 py-2">
+            <h3 class="fs-5 fw-semibold mb-0">Currently Reading</h3>
+        </div>
+        <div class="p-4">
+            <div class="row g-4">
+                <div class="col-md-3 col-lg-2">
+                    <img th:if="${currentBook.coverImagePath}"
+                         th:src="@{'/files/covers/' + ${currentBook.coverImagePath}}"
+                         class="img-fluid border rounded" alt="Book cover"
+                         style="max-width: 140px;">
+                    <div th:unless="${currentBook.coverImagePath}"
+                         class="bg-light d-flex align-items-center justify-content-center border rounded"
+                         style="width: 140px; height: 200px;">
+                        <span class="text-muted">No Cover</span>
+                    </div>
+                </div>
+                <div class="col-md-9 col-lg-10">
+                    <h4 class="fs-4 fw-bold" th:text="${currentBook.title}">Book Title</h4>
+                    <h5 class="fs-5 text-secondary" th:text="${currentBook.author}">Author</h5>
+                    <p class="text-muted my-2" th:text="${currentBook.comments}">Description</p>
+                    <p><strong>Owner: </strong><span th:text="${currentBook.owner.name}">Owner</span></p>
+                    <p><strong>Type: </strong><span th:text="${currentBook.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span></p>
+
+                    <div th:if="${!#maps.isEmpty(currentBook.filePaths)}" class="mt-2">
+                        <strong>Downloads: </strong>
+                        <div class="d-flex gap-2 mt-1">
+                            <a th:each="file : ${currentBook.filePaths.entrySet()}"
+                               th:href="@{'/files/books/' + ${file.value}}"
+                               class="btn btn-outline-primary btn-sm">
+                                <span th:text="${file.key.toUpperCase()}">FORMAT</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 d-flex gap-2">
+                        <form th:action="@{/books/complete-current}" method="post">
+                            <button type="submit" class="btn btn-success">Mark as Completed</button>
+                        </form>
+
+                        <div class="dropdown">
+                            <button class="btn btn-outline-danger dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown">
+                                Emergency Actions
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                       data-bs-target="#replaceBookModal">Replace Book</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                       data-bs-target="#skipBookModal">Skip Book</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Current Book Message -->
+    <div th:unless="${currentBook}" class="bg-white rounded-lg shadow-md mb-4 overflow-hidden">
+        <div class="bg-success text-white px-4 py-2">
+            <h3 class="fs-5 fw-semibold mb-0">Currently Reading</h3>
+        </div>
+        <div class="p-4 text-center">
+            <p class="text-muted mb-3">There is no book currently being read by the club.</p>
+            <p class="text-muted mb-3">Please select a book from the next person in queue.</p>
+        </div>
+    </div>
+
+    <!-- Next Book Section -->
+    <div th:if="${nextBook}" class="bg-white rounded-lg shadow-md mb-4 overflow-hidden">
+        <div class="bg-info text-white px-4 py-2">
+            <h3 class="fs-5 fw-semibold mb-0">Next Book</h3>
+        </div>
+        <div class="p-4">
+            <div class="row g-4">
+                <div class="col-md-3 col-lg-2">
+                    <img th:if="${nextBook.coverImagePath}"
+                         th:src="@{'/files/covers/' + ${nextBook.coverImagePath}}"
+                         class="img-fluid border rounded" alt="Book cover"
+                         style="max-width: 140px;">
+                    <div th:unless="${nextBook.coverImagePath}"
+                         class="bg-light d-flex align-items-center justify-content-center border rounded"
+                         style="width: 140px; height: 200px;">
+                        <span class="text-muted">No Cover</span>
+                    </div>
+                </div>
+                <div class="col-md-9 col-lg-10">
+                    <h4 class="fs-4 fw-bold" th:text="${nextBook.title}">Book Title</h4>
+                    <h5 class="fs-5 text-secondary" th:text="${nextBook.author}">Author</h5>
+                    <p class="text-muted my-2" th:text="${nextBook.comments}">Description</p>
+                    <p><strong>Owner: </strong><span th:text="${nextBook.owner.name}">Owner</span></p>
+                    <p><strong>Type: </strong><span th:text="${nextBook.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span></p>
+
+                    <div th:if="${!#maps.isEmpty(nextBook.filePaths)}" class="mt-2">
+                        <strong>Downloads: </strong>
+                        <div class="d-flex gap-2 mt-1">
+                            <a th:each="file : ${nextBook.filePaths.entrySet()}"
+                               th:href="@{'/files/books/' + ${file.value}}"
+                               class="btn btn-outline-primary btn-sm">
+                                <span th:text="${file.key.toUpperCase()}">FORMAT</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Next Member's Books Section - Only show when there's no next book selected -->
+    <div th:if="${nextBook == null && nextMember != null && nextMemberBooks != null && !nextMemberBooks.empty}"
+         class="bg-white rounded-lg shadow-md mb-4 overflow-hidden">
+        <div class="bg-primary text-white px-4 py-2">
+            <h3 class="fs-5 fw-semibold mb-0">
+                Next in Queue: <span th:text="${nextMember.member.name}"></span>'s Books
+            </h3>
+        </div>
+        <div class="p-4">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                <div th:each="book : ${nextMemberBooks}" class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div th:if="${book.coverImagePath}">
+                                <img th:src="@{'/files/covers/' + ${book.coverImagePath}}"
+                                     class="mb-3 border rounded" style="max-height: 120px;" alt="Book cover">
+                            </div>
+                            <div th:unless="${book.coverImagePath}"
+                                 class="bg-light d-flex align-items-center justify-content-center border rounded mx-auto mb-3"
+                                 style="width: 80px; height: 120px;">
+                                <span class="text-muted small">No Cover</span>
+                            </div>
+
+                            <h5 class="card-title fw-semibold" th:text="${book.title}">Book Title</h5>
+                            <h6 class="card-subtitle mb-2 text-muted" th:text="${book.author}">Author</h6>
+                            <p class="card-text small text-muted" th:text="${book.comments}">Description</p>
+                            <p class="small"><strong>Type: </strong>
+                                <span th:text="${book.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span>
+                            </p>
+                        </div>
+                        <div class="card-footer bg-light text-center">
+                            <!-- This form submits to the new endpoint in BookController -->
+                            <form th:action="@{/books/{id}/set-next(id=${book.id})}" method="post">
+                                <button type="submit" class="btn btn-primary btn-sm">Select as Next</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recently Completed Books Section -->
+    <div th:if="${!#lists.isEmpty(recentlyCompletedBooks)}" class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-4 py-2 border-bottom d-flex justify-content-between align-items-center">
+            <h3 class="fs-5 fw-semibold mb-0">Recently Completed Books</h3>
+            <a th:href="@{/books(status=COMPLETED)}" class="text-primary small">View All</a>
+        </div>
+        <div class="p-4">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Cover</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Type</th>
+                        <th>Owner</th>
+                        <th>Date</th>
+                        <th>Ratings</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="book : ${recentlyCompletedBooks}">
+                        <td>
+                            <img th:if="${book.coverImagePath}"
+                                 th:src="@{'/files/covers/' + ${book.coverImagePath}}"
+                                 class="border" style="width: 40px; height: 60px; object-fit: cover;" alt="Book cover">
+                            <div th:unless="${book.coverImagePath}"
+                                 class="bg-light d-flex align-items-center justify-content-center text-muted small border"
+                                 style="width: 40px; height: 60px;">
+                                No Cover
+                            </div>
+                        </td>
+                        <td th:text="${book.title}">Title</td>
+                        <td th:text="${book.author}">Author</td>
+                        <td th:text="${book.fiction ? 'Fiction' : 'Non-Fiction'}">Type</td>
+                        <td th:text="${book.owner.name}">Owner</td>
+                        <td th:text="${#temporals.format(book.completionDate, 'yyyy-MM-dd')}">Date</td>
+                        <td>
+                            <div th:if="${bookRatings != null && bookRatings.containsKey(book.id)}">
+                                <div>R: <span th:text="${#numbers.formatDecimal(bookRatings.get(book.id).get('readability'), 1, 1)}">4.5</span>/5.0</div>
+                                <div>C: <span th:text="${#numbers.formatDecimal(bookRatings.get(book.id).get('content'), 1, 1)}">4.2</span>/5.0</div>
+                            </div>
+                            <div th:unless="${bookRatings != null && bookRatings.containsKey(book.id)}">
+                                No ratings
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a th:href="@{/books/{id}#rate(id=${book.id})}" class="btn btn-outline-primary btn-sm">Rate</a>
+                                <div th:if="${!#maps.isEmpty(book.filePaths)}" class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown">
+                                        Download
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li th:each="file : ${book.filePaths.entrySet()}">
+                                            <a class="dropdown-item" th:href="@{'/files/books/' + ${file.value}}"
+                                               th:text="${file.key.toUpperCase()}">FORMAT</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals for Emergency Actions -->
+    <!-- Replace Book Modal -->
+    <div class="modal fade" id="replaceBookModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Replace Current Book</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/books/replace-current}" method="post">
+                    <div class="modal-body">
+                        <p>Select another book from <strong th:text="${currentBook?.owner?.name}">current owner</strong> to replace the current book:</p>
+
+                        <!-- Show message if no other books are available -->
+                        <div th:if="${#lists.isEmpty(currentMemberWishlistBooks)}" class="alert alert-warning">
+                            <p class="mb-0">No other books available from this member.</p>
+                        </div>
+
+                        <!-- Dropdown for selection -->
+                        <select name="newBookId" class="form-select" required th:if="${!#lists.isEmpty(currentMemberWishlistBooks)}">
+                            <option value="">-- Select a book --</option>
+                            <option th:each="book : ${currentMemberWishlistBooks}"
+                                    th:value="${book.id}"
+                                    th:text="${book.title + ' by ' + book.author}">Book title</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger"
+                                th:disabled="${#lists.isEmpty(currentMemberWishlistBooks)}">Replace Book</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skip Book Modal -->
+    <div class="modal fade" id="skipBookModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Skip Current Book</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/books/skip-current}" method="post">
+                    <div class="modal-body">
+                        <p>After which member do you want to place the skipped member?</p>
+                        <select name="placeAfterId" class="form-select" required>
+                            <option value="">-- Select a member --</option>
+                            <option th:each="queueMember : ${queueMembers}"
+                                    th:if="${queueMember.position > 0}"
+                                    th:value="${queueMember.member.id}"
+                                    th:text="${queueMember.member.name}">Member name</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Skip Book</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="scripts">
+    <!-- Any page-specific JavaScript would go here -->
+</th:block>
+</body>
+</html>

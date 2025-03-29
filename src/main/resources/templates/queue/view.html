@@ -1,0 +1,135 @@
+<!-- src/main/resources/templates/queue/view.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: html(content=~{::content}, scripts=~{::scripts}, title='Queue')}">
+<head>
+    <title>Queue</title>
+</head>
+<body>
+<th:block th:fragment="content">
+    <!-- Queue Status -->
+    <div class="bg-white rounded-lg shadow-md mb-4 overflow-hidden">
+        <div class="px-4 py-2 border-b d-flex justify-content-between align-items-center">
+            <h3 class="fs-5 fw-semibold mb-0">Current Queue Status</h3>
+            <a th:href="@{/queue/manage}" class="btn btn-primary btn-sm">Manage Queue</a>
+        </div>
+
+        <div class="p-4">
+            <div th:if="${currentMember == null}">
+                <div class="alert alert-warning">
+                    <p class="mb-0">No members are currently in the queue. Please add members to start the reading rotation.</p>
+                </div>
+            </div>
+
+            <div th:if="${currentMember != null}" class="row g-4">
+                <!-- Current Turn -->
+                <div class="col-md-6">
+                    <div class="bg-primary bg-opacity-10 border border-primary rounded-lg p-4">
+                        <h4 class="fw-semibold text-primary mb-3">Current Turn</h4>
+                        <div>
+                            <p class="fs-5 fw-medium mb-1" th:text="${currentMember.member.name}">Current Member</p>
+                            <p class="text-muted mb-1">
+                                <strong>Last pick:</strong>
+                                <span th:if="${currentMember.lastPickDate}"
+                                      th:text="${#temporals.format(currentMember.lastPickDate, 'MMMM d, yyyy')}">Last Pick Date</span>
+                                <span th:unless="${currentMember.lastPickDate}">Never</span>
+                            </p>
+                            <p class="text-muted mb-0">
+                                <strong>Total picks:</strong> <span th:text="${currentMember.totalPicks}">0</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next Turn -->
+                <div class="col-md-6">
+                    <div th:if="${nextMember != null}" class="bg-light border rounded-lg p-4">
+                        <h4 class="fw-semibold text-secondary mb-3">Next Turn</h4>
+                        <div>
+                            <p class="fs-5 fw-medium mb-1" th:text="${nextMember.member.name}">Next Member</p>
+                            <p class="text-muted mb-1">
+                                <strong>Last pick:</strong>
+                                <span th:if="${nextMember.lastPickDate}"
+                                      th:text="${#temporals.format(nextMember.lastPickDate, 'MMMM d, yyyy')}">Last Pick Date</span>
+                                <span th:unless="${nextMember.lastPickDate}">Never</span>
+                            </p>
+                            <p class="text-muted mb-0">
+                                <strong>Total picks:</strong> <span th:text="${nextMember.totalPicks}">0</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${currentMember != null}" class="mt-4">
+                <form th:action="@{/queue/rotate}" method="post">
+                    <button type="submit" class="btn btn-success">
+                        Rotate Queue (Complete Current Turn)
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Members List -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-4 py-2 border-b">
+            <h3 class="fs-5 fw-semibold mb-0">Queue Order</h3>
+        </div>
+
+        <div class="p-4">
+            <div th:if="${#lists.isEmpty(queueItems)}" class="alert alert-light">
+                <p class="mb-0">No members are currently in the queue.</p>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(queueItems)}" class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Position</th>
+                        <th>Member</th>
+                        <th>Last Pick</th>
+                        <th>Total Picks</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${queueItems}" th:class="${
+                            item.position == 0 ? 'bg-primary bg-opacity-10' :
+                            (item.position == 1 ? 'bg-light' : '')}">
+                        <td>
+                                <span th:if="${item.position == 0}" class="badge bg-primary">
+                                    Current
+                                </span>
+                            <span th:if="${item.position == 1}" class="badge bg-secondary">
+                                    Next
+                                </span>
+                            <span th:if="${item.position > 1}" class="text-muted">
+                                    #<span th:text="${item.position + 1}">3</span>
+                                </span>
+                        </td>
+                        <td class="fw-medium" th:text="${item.member.name}">Member Name</td>
+                        <td class="text-muted">
+                                <span th:if="${item.lastPickDate}" th:text="${#temporals.format(item.lastPickDate, 'yyyy-MM-dd')}">
+                                    2025-01-05
+                                </span>
+                            <span th:unless="${item.lastPickDate}">Never</span>
+                        </td>
+                        <td class="text-muted" th:text="${item.totalPicks}">4</td>
+                        <td>
+                            <span th:if="${item.active}" class="badge bg-success">Active</span>
+                            <span th:unless="${item.active}" class="badge bg-danger">Inactive</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="scripts">
+    <!-- Any page-specific JavaScript would go here -->
+</th:block>
+</body>
+</html>
