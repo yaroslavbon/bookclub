@@ -64,4 +64,15 @@ public class Book {
         }
         return filePaths.get(format.toLowerCase());
     }
+
+    /**
+     * Remove a file path for the given format
+     *
+     * @param format The file format (epub, pdf, mobi)
+     */
+    public void removeFilePath(String format) {
+        if (this.filePaths != null) {
+            this.filePaths.remove(format);
+        }
+    }
 }

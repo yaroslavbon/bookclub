@@ -35,27 +35,85 @@
                              style="width: 160px; height: 250px;">
                             <span>No Cover</span>
                         </div>
+                    </div>
 
-                        <!-- File Upload -->
+                    <!-- Download Links -->
+                    <!-- Improved compact display for book files (with support for long Cyrillic filenames) -->
+                    <div th:if="${!#maps.isEmpty(book.filePaths)}" class="mb-3">
+                        <h6 class="fw-semibold mb-2">Available Formats</h6>
+                        <div class="list-group">
+                            <div th:each="file : ${book.filePaths.entrySet()}" class="list-group-item py-2">
+                                <div class="d-flex align-items-center">
+                                    <!-- Format badge -->
+                                    <span class="badge bg-secondary me-2" th:text="${file.key.toUpperCase()}">FORMAT</span>
+
+                                    <!-- Truncated filename with tooltip for full name -->
+                                    <small class="text-muted text-truncate me-auto"
+                                           th:text="${file.value}"
+                                           th:title="${file.value}"
+                                           style="max-width: 200px;">filename.ext</small>
+
+                                    <!-- Compact button group -->
+                                    <div class="btn-group btn-group-sm ms-2">
+                                        <a th:href="@{'/files/books/' + ${file.value}}"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Download">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                th:data-bs-target="'#deleteFileModal-' + ${file.key}"
+                                                title="Remove">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload with error handling -->
+                    <div class="mb-3">
+                        <h6 class="fw-semibold mb-2">Upload Book Files</h6>
                         <form th:action="@{/books/{id}/upload(id=${book.id})}" method="post"
                               enctype="multipart/form-data">
                             <div class="input-group input-group-sm mb-2">
                                 <input type="file" class="form-control" name="file" id="bookFile" required>
                                 <button class="btn btn-outline-secondary" type="submit">Upload</button>
                             </div>
-                            <div class="form-text">Upload EPUB, PDF, or MOBI files</div>
+                            <div class="form-text">
+                                <ul class="mb-0">
+                                    <li>Max 1 file per format (EPUB, PDF, MOBI)</li>
+                                    <li>To replace an existing file, remove it first</li>
+                                    <li>EPUB files can provide a cover image</li>
+                                </ul>
+                            </div>
                         </form>
                     </div>
 
-                    <!-- Download Links -->
-                    <div th:if="${!#maps.isEmpty(book.filePaths)}" class="mb-3">
-                        <h6 class="fw-semibold mb-2">Available Formats</h6>
-                        <div class="d-flex flex-column gap-2">
-                            <a th:each="file : ${book.filePaths.entrySet()}"
-                               th:href="@{'/files/books/' + ${file.value}}"
-                               class="btn btn-outline-primary btn-sm">
-                                Download <span th:text="${file.key.toUpperCase()}">FORMAT</span>
-                            </a>
+                    <!-- Delete file confirmation modals -->
+                    <div th:each="file : ${book.filePaths.entrySet()}"
+                         th:id="'deleteFileModal-' + ${file.key}" class="modal fade" tabindex="-1">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Confirm File Removal</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Remove <strong th:text="${file.key.toUpperCase()}">FORMAT</strong> file?</p>
+                                    <p class="mb-0 small text-danger">This action cannot be undone.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form th:action="@{/files/delete-book-file}" method="post">
+                                        <input type="hidden" name="bookId" th:value="${book.id}">
+                                        <input type="hidden" name="format" th:value="${file.key}">
+                                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

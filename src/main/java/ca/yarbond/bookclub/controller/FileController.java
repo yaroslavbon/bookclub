@@ -1,5 +1,6 @@
 package ca.yarbond.bookclub.controller;
 
+import ca.yarbond.bookclub.service.BookService;
 import ca.yarbond.bookclub.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -8,9 +9,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.nio.file.Path;
 
@@ -19,10 +19,12 @@ import java.nio.file.Path;
 public class FileController {
 
     private final FileStorageService fileStorageService;
+    private final BookService bookService;
 
     @Autowired
-    public FileController(FileStorageService fileStorageService) {
+    public FileController(FileStorageService fileStorageService, BookService bookService) {
         this.fileStorageService = fileStorageService;
+        this.bookService = bookService;
     }
 
     @GetMapping("/books/{filename:.+}")
@@ -60,5 +62,23 @@ public class FileController {
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    /**
+     * Delete a book file
+     */
+    @PostMapping("/delete-book-file")
+    public String deleteBookFile(
+            @RequestParam Long bookId,
+            @RequestParam String format,
+            RedirectAttributes redirectAttributes) {
+        try {
+            bookService.removeBookFile(bookId, format);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    format.toUpperCase() + " file removed successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to remove file: " + e.getMessage());
+        }
+        return "redirect:/books/" + bookId;
     }
 }

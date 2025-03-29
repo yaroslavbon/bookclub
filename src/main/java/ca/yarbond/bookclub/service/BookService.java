@@ -151,25 +151,6 @@ public class BookService {
         bookRepository.deleteById(id);
     }
 
-    @Transactional
-    public Book addBookFile(Long bookId, MultipartFile file) {
-        Book book = getBookById(bookId);
-
-        String filename = fileStorageService.storeBookFile(file);
-        String fileFormat = getFileFormat(file.getOriginalFilename());
-        book.addFilePath(fileFormat, filename);
-
-        // If it's an EPUB file, try to extract the cover
-        if ("epub".equalsIgnoreCase(fileFormat)) {
-            String coverPath = fileStorageService.extractCoverFromEpub(file);
-            if (coverPath != null) {
-                book.setCoverImagePath(coverPath);
-            }
-        }
-
-        return bookRepository.save(book);
-    }
-
     /**
      * Marks current book as completed and promotes next book
      */
@@ -335,5 +316,67 @@ public class BookService {
         // Move current book back to wishlist without queue manipulation
         currentBook.setStatus(BookStatus.WISHLIST);
         bookRepository.save(currentBook);
+    }
+
+    @Transactional
+    public Book addBookFile(Long bookId, MultipartFile file) {
+        Book book = getBookById(bookId);
+
+        // Get the file format (extension)
+        String fileFormat = getFileFormat(file.getOriginalFilename());
+        if (fileFormat.isEmpty()) {
+            throw new RuntimeException("Could not determine file format");
+        }
+
+        // Check if a file with the same format already exists
+        if (book.getFilePaths().containsKey(fileFormat)) {
+            throw new RuntimeException("A " + fileFormat.toUpperCase() + " file already exists for this book. " +
+                    "Please remove the existing file first.");
+        }
+
+        // Store the file with the book information for better filename
+        String filename = fileStorageService.storeBookFile(file, book);
+        book.addFilePath(fileFormat, filename);
+
+        // If it's an EPUB file, try to extract the cover
+        if ("epub".equalsIgnoreCase(fileFormat)) {
+            String coverPath = fileStorageService.extractCoverFromEpub(file);
+            if (coverPath != null) {
+                book.setCoverImagePath(coverPath);
+            }
+        }
+
+        return bookRepository.save(book);
+    }
+
+    /**
+     * Removes a file from a book
+     *
+     * @param bookId The book id
+     * @param format The file format to remove (epub, pdf, mobi)
+     * @return The updated book
+     */
+    @Transactional
+    public Book removeBookFile(Long bookId, String format) {
+        Book book = getBookById(bookId);
+
+        // Convert format to lowercase for case-insensitive comparison
+        String formatLower = format.toLowerCase();
+
+        // Check if the book has a file with the specified format
+        if (!book.getFilePaths().containsKey(formatLower)) {
+            throw new RuntimeException("No " + formatLower.toUpperCase() + " file found for this book");
+        }
+
+        // Get the filename before removing it from book
+        String filename = book.getFilePaths().get(formatLower);
+
+        // Remove the file path from the book
+        book.removeFilePath(formatLower);
+
+        // Delete the file from storage
+        fileStorageService.deleteBookFile(filename);
+
+        return bookRepository.save(book);
     }
 }
