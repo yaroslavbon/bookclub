@@ -173,7 +173,7 @@ public class BookService {
         }
 
         owner.setLastPickDate(LocalDate.now());
-        owner.setTotalPicks(owner.getTotalPicks() + 1);
+        owner.incrementTotalPicks();
         memberRepository.save(owner);
 
         if(owner.isActive()){

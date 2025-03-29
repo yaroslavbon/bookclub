@@ -37,4 +37,8 @@ public class Member {
 
     @Column(name = "total_picks")
     private int totalPicks;
+
+    public void incrementTotalPicks(){
+        totalPicks++;
+    }
 }
