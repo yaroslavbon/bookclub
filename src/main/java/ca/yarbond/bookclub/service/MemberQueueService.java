@@ -222,13 +222,4 @@ public class MemberQueueService {
             }
         });
     }
-
-    @Transactional
-    public void updateCurrentMemberPicksData() {
-        Member currentMember = getCurrentMember().getMember();
-
-        currentMember.setLastPickDate(LocalDate.now());
-        currentMember.setTotalPicks(currentMember.getTotalPicks() + 1);
-        memberRepository.save(currentMember);
-    }
 }

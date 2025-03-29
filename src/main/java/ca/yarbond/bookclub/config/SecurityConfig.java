@@ -24,10 +24,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers("/h2-console/**").hasRole("ADMIN")
-                        // Remove API endpoints since we no longer have REST controllers
-//                        .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/files/**").authenticated() // Ensure file downloads work
-                        .requestMatchers("/members/**", "/queue/manage").hasRole("ADMIN")
+                        // Use /queue URLs for member management instead of /members
+                        .requestMatchers("/queue/members/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

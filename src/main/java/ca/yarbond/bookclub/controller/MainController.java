@@ -59,7 +59,7 @@ public class MainController {
         }
 
         // Get next members books for selection
-        Pair<MemberQueueItem, List<Book>> pair = bookService.getNextMemberWithWishlistBooks(currentBook == null);
+        Pair<MemberQueueItem, List<Book>> pair = bookService.getNextMemberWithWishlistBooks(currentBook);
 
         if(pair != null) {
             model.addAttribute("nextMember", pair.getFirst());
@@ -110,6 +110,12 @@ public class MainController {
     @PostMapping("/books/skip-current")
     public String skipCurrentBook(@RequestParam("placeAfterId") Long placeAfterId) {
         bookService.skipCurrentBook(placeAfterId);
+        return "redirect:/";
+    }
+
+    @PostMapping("/books/skip-inactive-current")
+    public String skipInactiveCurrentBook() {
+        bookService.skipInactiveCurrentBook();
         return "redirect:/";
     }
 }

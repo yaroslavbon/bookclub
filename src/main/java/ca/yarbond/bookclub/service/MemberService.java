@@ -12,10 +12,12 @@ import java.util.List;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final MemberQueueService memberQueueService;
 
     @Autowired
-    public MemberService(MemberRepository memberRepository) {
+    public MemberService(MemberRepository memberRepository, MemberQueueService memberQueueService) {
         this.memberRepository = memberRepository;
+        this.memberQueueService = memberQueueService;
     }
 
     /**
@@ -50,42 +52,75 @@ public class MemberService {
 
     /**
      * Create a new member
+     * Note: Active members are automatically added to queue by the controller
      */
     @Transactional
     public Member createMember(Member member) {
         if (memberRepository.existsByName(member.getName())) {
             throw new RuntimeException("Member with name '" + member.getName() + "' already exists");
         }
-        return memberRepository.save(member);
+
+        // Default to active
+        member.setActive(true);
+        Member createdMember = memberRepository.save(member);
+        memberQueueService.addMemberToQueue(createdMember.getId());
+        return createdMember;
     }
 
     /**
      * Update an existing member
+     * Note: The controller handles synchronizing active status with queue membership
      */
     @Transactional
-    public Member updateMember(Long id, Member memberDetails) {
+    public Member updateMemberName(Long id, String newName) {
         Member member = getMemberById(id);
 
         // Check if name is being changed and if new name already exists
-        if (!member.getName().equals(memberDetails.getName()) &&
-                memberRepository.existsByName(memberDetails.getName())) {
-            throw new RuntimeException("Member with name '" + memberDetails.getName() + "' already exists");
+        if (!member.getName().equals(newName) &&
+                memberRepository.existsByName(newName)) {
+            throw new RuntimeException("Member with name '" + newName + "' already exists");
         }
 
-        member.setName(memberDetails.getName());
+        member.setName(newName);
 
         return memberRepository.save(member);
     }
 
+
+    @Transactional
+    public Member toggleStatus(Long id) {
+        Member member = getMemberById(id);
+
+        boolean nowActive = !member.isActive();
+
+        member.setActive(nowActive);
+
+        Member updatedMember = memberRepository.save(member);
+
+        if (nowActive)
+            memberQueueService.addMemberToQueue(id);
+        else
+            memberQueueService.removeMemberFromQueue(id);
+
+        return updatedMember;
+    }
+
     /**
      * Delete a member
+     *
+     * @return
      */
     @Transactional
-    public void deleteMember(Long id) {
-        // Before deleting, should check if member has books or is in queue
-        if (!memberRepository.existsById(id)) {
-            throw new RuntimeException("Member not found with id: " + id);
-        }
+    public String deleteMember(Long id) {
+        Member member = getMemberById(id);
+        String memberName = member.getName();
+
+        // Remove from queue if member is in queue
+        if(member.isActive()) memberQueueService.removeMemberFromQueue(id);
+
         memberRepository.deleteById(id);
+
+        return memberName;
     }
+
 }

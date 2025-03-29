@@ -13,11 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class BookService {
@@ -188,8 +185,19 @@ public class BookService {
         currentBook.setCompletionDate(LocalDate.now());
         bookRepository.save(currentBook);
 
-        memberQueueService.updateCurrentMemberPicksData();
-        memberQueueService.rotateQueue();
+        Member owner = currentBook.getOwner();
+
+        if (owner == null) {
+            throw new RuntimeException("Book with no owner found in DB");
+        }
+
+        owner.setLastPickDate(LocalDate.now());
+        owner.setTotalPicks(owner.getTotalPicks() + 1);
+        memberRepository.save(owner);
+
+        if(owner.isActive()){
+            memberQueueService.rotateQueue();
+        }
     }
 
     /**
@@ -274,7 +282,9 @@ public class BookService {
             nextBook.setStatus(BookStatus.CURRENT);
             bookRepository.save(nextBook);
 
-            memberQueueService.rotateToMember(nextBook.getOwner());
+            if(nextBook.getOwner() != null && nextBook.getOwner().isActive()){
+                memberQueueService.rotateToMember(nextBook.getOwner());
+            }
 
             return true;
         }
@@ -283,12 +293,14 @@ public class BookService {
     }
 
     @Transactional
-    public Pair<MemberQueueItem, List<Book>> getNextMemberWithWishlistBooks(boolean startFromCurrent) {
+    public Pair<MemberQueueItem, List<Book>> getNextMemberWithWishlistBooks(Book currentBook) {
+        boolean skipCurrentMember = currentBook != null && currentBook.getOwner() != null && currentBook.getOwner().isActive();
+
         List<MemberQueueItem> queue = memberQueueService.getQueue();
 
         Iterator<MemberQueueItem> iterator = queue.iterator();
 
-        if (!startFromCurrent && iterator.hasNext()) iterator.next();
+        if (skipCurrentMember && iterator.hasNext()) iterator.next();
 
         while(iterator.hasNext()){
             MemberQueueItem memberQueueItem = iterator.next();
@@ -299,5 +311,29 @@ public class BookService {
         }
 
         return null;
+    }
+
+    /**
+     * Skips the current book from an inactive member
+     * Moves the book back to wishlist without queue manipulation
+     */
+    @Transactional
+    public void skipInactiveCurrentBook() {
+        Book currentBook = getCurrentBook();
+        if (currentBook == null) {
+            throw new RuntimeException("No book is currently being read");
+        }
+
+        if (currentBook.getOwner() == null) {
+            throw new RuntimeException("Book with no owner found in DB");
+        }
+
+        if (currentBook.getOwner().isActive()) {
+            throw new RuntimeException("Book owner is active, use regular skip functionality");
+        }
+
+        // Move current book back to wishlist without queue manipulation
+        currentBook.setStatus(BookStatus.WISHLIST);
+        bookRepository.save(currentBook);
     }
 }

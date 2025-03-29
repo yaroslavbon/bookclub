@@ -41,6 +41,7 @@ public class DataInitializer implements CommandLineRunner {
             Member vadim = createMember("Vadim");
             Member yar = createMember("Yar");
             Member alex = createMember("Alex");
+            Member ivan = createInactiveMember("Ivan");
 
             // Set up queue in the specified order
             memberQueueService.addMemberToQueue(alik.getId());
@@ -75,7 +76,7 @@ public class DataInitializer implements CommandLineRunner {
             book1.setTitle("Dune");
             book1.setAuthor("Frank Herbert");
             book1.setFiction(true);
-            book1.setOwner(max);
+            book1.setOwner(ivan);
             book1.setStatus(BookStatus.WISHLIST);
             book1.setComments("A science fiction novel about a desert planet.");
             bookRepository.save(book1);
@@ -84,7 +85,7 @@ public class DataInitializer implements CommandLineRunner {
             book2.setTitle("Thinking, Fast and Slow");
             book2.setAuthor("Daniel Kahneman");
             book2.setFiction(false);
-            book2.setOwner(max);
+            book2.setOwner(ivan);
             book2.setStatus(BookStatus.WISHLIST);
             book2.setComments("A book about how we think and make decisions.");
             bookRepository.save(book2);
@@ -113,6 +114,13 @@ public class DataInitializer implements CommandLineRunner {
     private Member createMember(String name) {
         Member member = new Member();
         member.setName(name);
+        return memberRepository.save(member);
+    }
+
+    private Member createInactiveMember(String name) {
+        Member member = new Member();
+        member.setName(name);
+        member.setActive(false);
         return memberRepository.save(member);
     }
 }

@@ -29,7 +29,11 @@
                     <h4 class="fs-4 fw-bold" th:text="${currentBook.title}">Book Title</h4>
                     <h5 class="fs-5 text-secondary" th:text="${currentBook.author}">Author</h5>
                     <p class="text-muted my-2" th:text="${currentBook.comments}">Description</p>
-                    <p><strong>Owner: </strong><span th:text="${currentBook.owner.name}">Owner</span></p>
+                    <p>
+                        <strong>Owner: </strong>
+                        <span th:text="${currentBook.owner.name}">Owner</span>
+                        <span th:if="${!currentBook.owner.active}" class="badge bg-warning text-dark ms-1">Inactive</span>
+                    </p>
                     <p><strong>Type: </strong><span th:text="${currentBook.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span></p>
 
                     <div th:if="${!#maps.isEmpty(currentBook.filePaths)}" class="mt-2">
@@ -274,7 +278,7 @@
                     <h5 class="modal-title">Skip Current Book</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form th:action="@{/books/skip-current}" method="post">
+                <form th:if="${currentBook != null && currentBook.owner.active}" th:action="@{/books/skip-current}" method="post">
                     <div class="modal-body">
                         <p>After which member do you want to place the skipped member?</p>
                         <select name="placeAfterId" class="form-select" required>
@@ -284,6 +288,16 @@
                                     th:value="${queueMember.member.id}"
                                     th:text="${queueMember.member.name}">Member name</option>
                         </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Skip Book</button>
+                    </div>
+                </form>
+                <form th:if="${currentBook != null && !currentBook.owner.active}" th:action="@{/books/skip-inactive-current}" method="post">
+                    <div class="modal-body">
+                        <p>The book <strong th:text="${currentBook.title}">Book Title</strong> will be moved back to the wishlist.</p>
+                        <p>The owner <strong th:text="${currentBook.owner.name}">Owner Name</strong> is inactive and not in the reading queue.</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
