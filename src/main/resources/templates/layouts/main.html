@@ -1,10 +1,11 @@
 <!-- src/main/resources/templates/layouts/main.html -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      data-bs-theme="light"> <!-- data-bs-theme will be toggled by JS -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Add these lines to the <head> section of your src/main/resources/templates/layouts/main.html file -->
+    <!-- Favicon resources -->
     <link rel="icon" th:href="@{/favicon.ico}" sizes="any">
     <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
     <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
@@ -13,8 +14,10 @@
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom styles -->
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Custom theme styles -->
+    <link rel="stylesheet" th:href="@{/css/theme.css}">
 </head>
 <body class="bg-light">
 <!-- Navigation -->
@@ -33,9 +36,16 @@
                     <a class="nav-link" th:classappend="${activeTab == 'books' ? 'active' : ''}" th:href="@{/books}">Books</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${activeTab == 'queue' ? 'active' : ''}" th:href="@{/queue}">Queue</a>
+                    <a class="nav-link" th:classappend="${activeTab == 'queue' ? 'active' : ''}" th:href="@{/queue}">Queue/Members</a>
                 </li>
             </ul>
+
+            <!-- Dark mode toggle -->
+            <button type="button" class="theme-toggle-btn" id="themeToggle" aria-label="Toggle dark mode">
+                <i class="bi bi-sun-fill" id="lightIcon"></i>
+                <i class="bi bi-moon-fill" id="darkIcon" style="display: none;"></i>
+            </button>
+
             <!-- Logout button -->
             <form th:action="@{/logout}" method="post" class="d-flex">
                 <button class="btn btn-outline-light btn-sm" type="submit">Logout</button>
@@ -67,10 +77,13 @@
 
 <!-- Bootstrap JS and dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Custom JS -->
-<script>
-    const contextPath = '/bookclub'
+
+<!-- Common app JavaScript -->
+<script th:inline="javascript">
+    const contextPath = '/bookclub';
 </script>
+<script th:src="@{/js/theme.js}"></script>
+
 <!-- Page-specific scripts -->
 <th:block th:replace="${scripts}"></th:block>
 </body>

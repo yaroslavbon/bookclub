@@ -1,0 +1,143 @@
+/**
+ * Dark mode theme styles for Book Club application
+ */
+
+/* Theme toggle button styles */
+.theme-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    margin-right: 10px;
+}
+
+.theme-toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Login page theme toggle */
+[data-bs-theme="light"] .theme-toggle-btn-login {
+    background-color: #dee2e6;
+    border: 1px solid #ced4da;
+    color: #212529;
+}
+
+[data-bs-theme="light"] .theme-toggle-btn-login:hover {
+    background-color: #ced4da;
+}
+
+/* Dark theme overrides */
+[data-bs-theme="dark"] .bg-white {
+    background-color: #212529 !important;
+}
+
+[data-bs-theme="dark"] .border {
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .border-b,
+[data-bs-theme="dark"] .border-bottom {
+    border-bottom-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .bg-light {
+    background-color: #343a40 !important;
+}
+
+[data-bs-theme="dark"] .text-muted {
+    color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .text-secondary {
+    color: #9ba5ae !important;
+}
+
+/* Fix table headers in dark mode */
+[data-bs-theme="dark"] .table thead th,
+[data-bs-theme="dark"] .table-light,
+[data-bs-theme="dark"] th {
+    background-color: #2c3034 !important;
+    color: #adb5bd !important;
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.075) !important;
+}
+
+/* Fix table background in dark mode */
+[data-bs-theme="dark"] .table {
+    --bs-table-bg: transparent;
+}
+
+[data-bs-theme="dark"] .alert-light {
+    background-color: #343a40;
+    color: #e9ecef;
+    border-color: #495057;
+}
+
+/* Login form dark mode styles */
+[data-bs-theme="dark"] .form-signin form {
+    background-color: #212529;
+    color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #2c3034;
+    border-color: #495057;
+    color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+    background-color: #2c3034;
+    border-color: #0d6efd;
+    color: #e9ecef;
+}
+
+/* Card and form styles */
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .modal-content {
+    background-color: #2c3034;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .card-header,
+[data-bs-theme="dark"] .modal-header,
+[data-bs-theme="dark"] .modal-footer {
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .form-floating > label {
+    color: #adb5bd;
+}
+
+/* Make success message subtle in dark mode */
+[data-bs-theme="dark"] .alert-success {
+    background-color: rgba(25, 135, 84, 0.2);
+    color: #75b798;
+    border-color: rgba(25, 135, 84, 0.4);
+}
+
+/* Custom button styles for dark mode */
+[data-bs-theme="dark"] .btn-outline-secondary {
+    color: #9ba5ae;
+    border-color: #6c757d;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+/* Custom page background for dark mode */
+[data-bs-theme="dark"] body {
+    background-color: #1a1d20;
+}
