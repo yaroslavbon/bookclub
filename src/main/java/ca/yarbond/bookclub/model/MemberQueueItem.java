@@ -24,13 +24,4 @@ public class MemberQueueItem {
 
     @Column(nullable = false)
     private int position;
-
-    @Column(name = "last_pick_date")
-    private LocalDate lastPickDate;
-
-    @Column(name = "total_picks")
-    private int totalPicks;
-
-    @Column(name = "is_active")
-    private boolean active = true;
 }

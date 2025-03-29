@@ -9,9 +9,8 @@
 <th:block th:fragment="content">
     <!-- Queue Status -->
     <div class="bg-white rounded-lg shadow-md mb-4 overflow-hidden">
-        <div class="px-4 py-2 border-b d-flex justify-content-between align-items-center">
+        <div class="px-4 py-2 border-b">
             <h3 class="fs-5 fw-semibold mb-0">Current Queue Status</h3>
-            <a th:href="@{/queue/manage}" class="btn btn-primary btn-sm">Manage Queue</a>
         </div>
 
         <div class="p-4">
@@ -30,12 +29,12 @@
                             <p class="fs-5 fw-medium mb-1" th:text="${currentMember.member.name}">Current Member</p>
                             <p class="text-muted mb-1">
                                 <strong>Last pick:</strong>
-                                <span th:if="${currentMember.lastPickDate}"
-                                      th:text="${#temporals.format(currentMember.lastPickDate, 'MMMM d, yyyy')}">Last Pick Date</span>
-                                <span th:unless="${currentMember.lastPickDate}">Never</span>
+                                <span th:if="${currentMember.member.lastPickDate}"
+                                      th:text="${#temporals.format(currentMember.member.lastPickDate, 'MMMM d, yyyy')}">Last Pick Date</span>
+                                <span th:unless="${currentMember.member.lastPickDate}">Never</span>
                             </p>
                             <p class="text-muted mb-0">
-                                <strong>Total picks:</strong> <span th:text="${currentMember.totalPicks}">0</span>
+                                <strong>Total picks:</strong> <span th:text="${currentMember.member.totalPicks}">0</span>
                             </p>
                         </div>
                     </div>
@@ -49,12 +48,12 @@
                             <p class="fs-5 fw-medium mb-1" th:text="${nextMember.member.name}">Next Member</p>
                             <p class="text-muted mb-1">
                                 <strong>Last pick:</strong>
-                                <span th:if="${nextMember.lastPickDate}"
-                                      th:text="${#temporals.format(nextMember.lastPickDate, 'MMMM d, yyyy')}">Last Pick Date</span>
-                                <span th:unless="${nextMember.lastPickDate}">Never</span>
+                                <span th:if="${nextMember.member.lastPickDate}"
+                                      th:text="${#temporals.format(nextMember.member.lastPickDate, 'MMMM d, yyyy')}">Last Pick Date</span>
+                                <span th:unless="${nextMember.member.lastPickDate}">Never</span>
                             </p>
                             <p class="text-muted mb-0">
-                                <strong>Total picks:</strong> <span th:text="${nextMember.totalPicks}">0</span>
+                                <strong>Total picks:</strong> <span th:text="${nextMember.member.totalPicks}">0</span>
                             </p>
                         </div>
                     </div>
@@ -90,7 +89,7 @@
                         <th>Member</th>
                         <th>Last Pick</th>
                         <th>Total Picks</th>
-                        <th>Status</th>
+                        <th>Manage position</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -110,19 +109,43 @@
                         </td>
                         <td class="fw-medium" th:text="${item.member.name}">Member Name</td>
                         <td class="text-muted">
-                                <span th:if="${item.lastPickDate}" th:text="${#temporals.format(item.lastPickDate, 'yyyy-MM-dd')}">
+                                <span th:if="${item.member.lastPickDate}" th:text="${#temporals.format(item.member.lastPickDate, 'yyyy-MM-dd')}">
                                     2025-01-05
                                 </span>
-                            <span th:unless="${item.lastPickDate}">Never</span>
+                            <span th:unless="${item.member.lastPickDate}">Never</span>
                         </td>
-                        <td class="text-muted" th:text="${item.totalPicks}">4</td>
+                        <td class="text-muted" th:text="${item.member.totalPicks}">4</td>
                         <td>
-                            <span th:if="${item.active}" class="badge bg-success">Active</span>
-                            <span th:unless="${item.active}" class="badge bg-danger">Inactive</span>
+                            <div class="d-flex gap-2">
+                                <!-- Move Up button -->
+                                <form th:action="@{/queue/member/{id}/move-up(id=${item.member.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Move Up"
+                                            th:disabled="${item.position == 0}">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Move Down button -->
+                                <form th:action="@{/queue/member/{id}/move-down(id=${item.member.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Move Down"
+                                            th:disabled="${item.position == #lists.size(queueItems) - 1}">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div class="mt-4 bg-warning bg-opacity-10 border border-warning rounded p-4">
+                <h5 class="fw-semibold text-warning-emphasis mb-2">Queue Management Notes</h5>
+                <ul class="mt-2 mb-0 text-muted small">
+                    <li>Use the up/down arrows to manually adjust the queue order</li>
+                    <li>Click "Rotate Queue" to complete the current turn and move to the next member</li>
+                    <li>Changes to the queue are saved automatically</li>
+                </ul>
             </div>
         </div>
     </div>

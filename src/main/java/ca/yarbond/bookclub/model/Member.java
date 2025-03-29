@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,4 +28,13 @@ public class Member {
     @OneToMany(mappedBy = "member")
     @ToString.Exclude @EqualsAndHashCode.Exclude
     private List<Rating> ratings = new ArrayList<>();
+
+    @Column(name = "is_active")
+    private boolean active = true;
+
+    @Column(name = "last_pick_date")
+    private LocalDate lastPickDate;
+
+    @Column(name = "total_picks")
+    private int totalPicks;
 }

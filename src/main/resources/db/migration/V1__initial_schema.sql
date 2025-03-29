@@ -1,6 +1,9 @@
 -- Members table
 CREATE TABLE IF NOT EXISTS members (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    is_active BOOLEAN DEFAULT TRUE,
+    last_pick_date DATE,
+    total_picks INT DEFAULT 0,
     name VARCHAR(100) NOT NULL UNIQUE
 );
 
@@ -24,9 +27,6 @@ CREATE TABLE IF NOT EXISTS member_queue (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     member_id BIGINT NOT NULL UNIQUE,
     position INT NOT NULL,
-    last_pick_date DATE,
-    total_picks INT DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (member_id) REFERENCES members(id)
 );
 

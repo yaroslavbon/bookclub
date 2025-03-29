@@ -39,14 +39,6 @@ public class QueueController {
         return "queue/view";
     }
 
-    @GetMapping("/manage")
-    public String manageQueue(Model model) {
-        List<MemberQueueItem> queueItems = memberQueueService.getQueue();
-        model.addAttribute("queueItems", queueItems);
-        model.addAttribute("activeTab", "queue");
-        return "queue/manage";
-    }
-
     @PostMapping("/rotate")
     public String rotateQueue(RedirectAttributes redirectAttributes) {
         try {
@@ -56,19 +48,6 @@ public class QueueController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/queue";
-    }
-
-    @PostMapping("/member/{id}/toggle-active")
-    public String toggleMemberActive(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            MemberQueueItem queueItem = memberQueueService.toggleMemberActive(id);
-            String status = queueItem.isActive() ? "active" : "inactive";
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Member '" + queueItem.getMember().getName() + "' is now " + status);
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/queue/manage";
     }
 
     @PostMapping("/member/{id}/move-up")
@@ -86,7 +65,7 @@ public class QueueController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/queue/manage";
+        return "redirect:/queue";
     }
 
     @PostMapping("/member/{id}/move-down")
@@ -105,6 +84,6 @@ public class QueueController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/queue/manage";
+        return "redirect:/queue";
     }
 }

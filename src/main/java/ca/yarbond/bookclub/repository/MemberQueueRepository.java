@@ -17,9 +17,4 @@ public interface MemberQueueRepository extends JpaRepository<MemberQueueItem, Lo
     Optional<MemberQueueItem> findByPosition(int position);
 
     Optional<MemberQueueItem> findByMember(Member member);
-
-    Optional<MemberQueueItem> findByMemberId(Long memberId);
-
-    @Query("SELECT m FROM MemberQueueItem m WHERE m.active = true ORDER BY m.position ASC")
-    List<MemberQueueItem> findByActiveTrue();
 }

@@ -32,7 +32,7 @@ public class MemberQueueService {
      * Gets the ordered list of members in the queue
      */
     public List<MemberQueueItem> getQueue() {
-        return memberQueueRepository.findByActiveTrue();
+        return memberQueueRepository.findByOrderByPositionAsc();
     }
 
 
@@ -87,8 +87,6 @@ public class MemberQueueService {
         MemberQueueItem newQueueItem = new MemberQueueItem();
         newQueueItem.setMember(member);
         newQueueItem.setPosition(maxPosition + 1);
-        newQueueItem.setTotalPicks(0);
-        newQueueItem.setActive(true);
 
         return memberQueueRepository.save(newQueueItem);
     }
@@ -132,16 +130,6 @@ public class MemberQueueService {
         // Set new position for the moved member
         queueItem.setPosition(newPosition);
         memberQueueRepository.saveAll(allMembers);
-    }
-
-    /**
-     * Toggles a member's active status
-     */
-    @Transactional
-    public MemberQueueItem toggleMemberActive(Long memberId) {
-        MemberQueueItem queueItem = getQueueItemByMemberId(memberId);
-        queueItem.setActive(!queueItem.isActive());
-        return memberQueueRepository.save(queueItem);
     }
 
     /**
@@ -237,9 +225,10 @@ public class MemberQueueService {
 
     @Transactional
     public void updateCurrentMemberPicksData() {
-        MemberQueueItem currentMember = getCurrentMember();
+        Member currentMember = getCurrentMember().getMember();
+
         currentMember.setLastPickDate(LocalDate.now());
         currentMember.setTotalPicks(currentMember.getTotalPicks() + 1);
-        memberQueueRepository.save(currentMember);
+        memberRepository.save(currentMember);
     }
 }
