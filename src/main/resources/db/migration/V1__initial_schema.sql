@@ -52,11 +52,3 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL
 );
-
--- Initial admin user (password: admin)
-INSERT INTO users (username, password_hash, role)
-VALUES ('admin', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'ADMIN');
-
--- Initial user (password: user)
-INSERT INTO users (username, password_hash, role)
-VALUES ('user', '$2a$10$gNpnGpIb3snViTjZ.a1EKezwKBGCdVmHZ6OxW/gGh6uqvs.t1y.se', 'USER');

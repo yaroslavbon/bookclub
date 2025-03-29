@@ -1,5 +1,6 @@
 package ca.yarbond.bookclub.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +18,18 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Value("${app.security.admin.username}")
+    private String adminUsername;
+
+    @Value("${app.security.admin.password}")
+    private String adminPassword;
+
+    @Value("${app.security.user.username}")
+    private String userUsername;
+
+    @Value("${app.security.user.password}")
+    private String userPassword;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -57,14 +70,14 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails adminUser = User.builder()
-                .username("admin")
-                .password(passwordEncoder().encode("admin"))
+                .username(adminUsername)
+                .password(passwordEncoder().encode(adminPassword))
                 .roles("ADMIN", "USER")
                 .build();
 
         UserDetails regularUser = User.builder()
-                .username("user")
-                .password(passwordEncoder().encode("user"))
+                .username(userUsername)
+                .password(passwordEncoder().encode(userPassword))
                 .roles("USER")
                 .build();
 
