@@ -1,9 +1,9 @@
 @media (max-width: 500px) {
-  .book-summary {
-    background-color: lightblue;
+  .book-summary .book-summary-header {
+    flex-direction: column;
   }
 
-  .badge {
+  .book-summary .book-summary-header .badge {
     width: max-content;
   }
 }
