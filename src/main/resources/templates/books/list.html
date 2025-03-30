@@ -99,9 +99,9 @@
                                 </span>
                             </div>
                             <p class="mb-1 text-secondary" th:text="${book.author}">Author</p>
-                            <div class="small text-muted">
-                                <span class="me-3">Owner: <span th:text="${book.owner.name}">Owner</span></span>
-                                <span class="me-3" th:text="${book.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span>
+                            <div class="book-summary-details small text-muted d-flex my-2">
+                                <span>Owner: <span th:text="${book.owner.name}">Owner</span></span>
+                                <span th:text="${book.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span>
                                 <span th:if="${book.completionDate}">Completed: <span th:text="${#temporals.format(book.completionDate, 'yyyy-MM-dd')}">Date</span></span>
                             </div>
                             <p th:if="${book.comments}" class="small text-muted mt-1" th:text="${book.comments}">Comments</p>
