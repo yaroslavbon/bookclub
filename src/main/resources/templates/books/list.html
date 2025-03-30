@@ -99,7 +99,7 @@
                                 </span>
                             </div>
                             <p class="mb-1 text-secondary" th:text="${book.author}">Author</p>
-                            <div class="book-summary-details small text-muted d-flex my-2">
+                            <div class="book-summary-details small text-muted d-flex my-2 gap-2">
                                 <span>Owner: <span th:text="${book.owner.name}">Owner</span></span>
                                 <span th:text="${book.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span>
                                 <span th:if="${book.completionDate}">Completed: <span th:text="${#temporals.format(book.completionDate, 'yyyy-MM-dd')}">Date</span></span>
