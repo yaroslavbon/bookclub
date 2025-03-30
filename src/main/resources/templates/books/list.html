@@ -87,7 +87,7 @@
                             <div class="d-flex justify-content-between">
                                 <h5 class="mb-1 fw-semibold" th:text="${book.title}">Book Title</h5>
                                 <span th:if="${book.status}"
-                                      th:class="${'badge ' +
+                                      th:class="${'badge h-100 ' +
                                                  (book.status.name() == 'CURRENT' ? 'bg-success' :
                                                   book.status.name() == 'WISHLIST' ? 'bg-warning text-dark' :
                                                   book.status.name() == 'NEXT' ? 'bg-primary' :
