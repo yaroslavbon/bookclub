@@ -1,9 +1,19 @@
-@media (max-width: 500px) {
+@media (max-width: 576px) {
   .book-summary .book-summary-header {
     flex-direction: column;
   }
 
   .book-summary .book-summary-header .badge {
     width: max-content;
+  }
+
+  .book-summary .book-summary-details {
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 577px) {
+  .book-summary .book-summary-details {
+    flex-direction: row;
   }
 }
