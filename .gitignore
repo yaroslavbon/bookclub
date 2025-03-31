@@ -42,4 +42,3 @@ book-files/
 cover-images/
 bookclub_db.mv.db
 bookclub_db.trace.db
-src/main/java/ca/yarbond/bookclub/config/DataInitializer.java
