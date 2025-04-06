@@ -1,0 +1,33 @@
+<!-- src/main/resources/templates/books/edit.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: html(content=~{::content}, scripts=~{::scripts}, additionalScripts=~{::additionalScripts}, title='Edit Book')}">
+<head>
+    <title>Edit Book</title>
+</head>
+<body>
+<!-- Additional scripts block -->
+<th:block th:fragment="additionalScripts">
+    <script th:src="@{/js/inline-book-search.js}"></script>
+</th:block>
+
+<th:block th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 mb-0">Edit Book: <span th:text="${book.title}"></span></h2>
+    </div>
+
+    <th:block th:replace="~{books/book-form-fragment :: bookForm(${book}, true, ${members})}"></th:block>
+</th:block>
+
+<th:block th:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize inline book search
+            if (typeof InlineBookSearch !== 'undefined') {
+                InlineBookSearch.init();
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>

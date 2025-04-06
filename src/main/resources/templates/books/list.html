@@ -5,15 +5,17 @@
 <head>
     <title>Books</title>
 </head>
+
 <body>
+
 <th:block th:fragment="content">
     <div class="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
         <div class="px-4 py-2 border-b">
             <div class="d-flex justify-content-between align-items-center">
                 <h3 class="fs-5 fw-semibold mb-0">Books</h3>
-                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                <a th:href="@{/books/add}" class="btn btn-primary btn-sm">
                     Add Book
-                </button>
+                </a>
             </div>
         </div>
 
@@ -75,7 +77,8 @@
                         <div class="me-3 flex-shrink-0">
                             <img th:if="${book.coverImagePath}"
                                  th:src="@{'/files/covers/' + ${book.coverImagePath}}"
-                                 class="border rounded" style="width: 70px; height: 100px; object-fit: cover;" alt="Book cover">
+                                 class="border rounded" style="width: 70px; height: 100px; object-fit: cover;"
+                                 alt="Book cover">
                             <div th:unless="${book.coverImagePath}"
                                  class="bg-light d-flex align-items-center justify-content-center text-muted small border rounded"
                                  style="width: 70px; height: 100px;">
@@ -102,9 +105,11 @@
                             <div class="book-summary-details small text-muted d-flex my-2 gap-2">
                                 <span>Owner: <span th:text="${book.owner.name}">Owner</span></span>
                                 <span th:text="${book.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span>
-                                <span th:if="${book.completionDate}">Completed: <span th:text="${#temporals.format(book.completionDate, 'yyyy-MM-dd')}">Date</span></span>
+                                <span th:if="${book.completionDate}">Completed: <span
+                                        th:text="${#temporals.format(book.completionDate, 'yyyy-MM-dd')}">Date</span></span>
                             </div>
-                            <p th:if="${book.comments}" class="small text-muted mt-1" th:text="${book.comments}">Comments</p>
+                            <p th:if="${book.comments}" class="small text-muted mt-1" th:text="${book.comments}">
+                                Comments</p>
                         </div>
 
                         <div class="flex-shrink-0 d-flex">
@@ -113,7 +118,8 @@
                     </div>
 
                     <!-- Expanded Book Details with Ratings -->
-                    <div th:id="'book-details-' + ${book.id}" class="p-3 bg-light border-top book-details" style="display: none;">
+                    <div th:id="'book-details-' + ${book.id}" class="p-3 bg-light border-top book-details"
+                         style="display: none;">
                         <h6 class="fw-semibold mb-3">Member Ratings</h6>
 
                         <div th:if="${book.status != null && book.status.name() == 'COMPLETED'}">
@@ -137,18 +143,20 @@
                                    th:href="@{/books/{id}#rate(id=${book.id})}"
                                    class="btn btn-sm btn-outline-primary me-2">Rate Book</a>
 
-                                    <form th:if="${book.status != null && book.status.name() == 'WISHLIST'}"
-                                          th:action="@{/books/{id}/set-next(id=${book.id})}" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-primary">Select as Next</button>
-                                    </form>
+                                <form th:if="${book.status != null && book.status.name() == 'WISHLIST'}"
+                                      th:action="@{/books/{id}/set-next(id=${book.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Select as Next</button>
+                                </form>
 
                                 <div th:if="${!#maps.isEmpty(book.filePaths)}" class="btn-group btn-group-sm">
-                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                            data-bs-toggle="dropdown">
                                         Downloads
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li th:each="file : ${book.filePaths.entrySet()}">
-                                            <a class="dropdown-item" th:href="@{'/files/books/' + ${file.value}}" th:text="${file.key.toUpperCase()}">Format</a>
+                                            <a class="dropdown-item" th:href="@{'/files/books/' + ${file.value}}"
+                                               th:text="${file.key.toUpperCase()}">Format</a>
                                         </li>
                                     </ul>
                                 </div>
@@ -160,57 +168,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Book Modal -->
-    <div class="modal fade" id="addBookModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Book</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form th:action="@{/books}" method="post">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="title" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="title" name="title" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="author" class="form-label">Author</label>
-                            <input type="text" class="form-control" id="author" name="author" required>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="fiction" name="fiction">
-                                <label class="form-check-label" for="fiction">
-                                    Fiction
-                                </label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="owner.id" class="form-label">Owner</label>
-                            <select class="form-select" id="owner.id" name="owner.id" required>
-                                <option value="">Select Owner</option>
-                                <option th:each="member : ${members}" th:value="${member.id}" th:text="${member.name}">Member</option>
-                            </select>
-                        </div>
-                        <input type="hidden" name="status" value="WISHLIST">
-                        <div class="form-text mb-3">
-                            <small class="text-muted">New books are always added to your wishlist.</small>
-                        </div>
-                        <div class="mb-3">
-                            <label for="comments" class="form-label">Comments</label>
-                            <textarea class="form-control" id="comments" name="comments" rows="3"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Add Book</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

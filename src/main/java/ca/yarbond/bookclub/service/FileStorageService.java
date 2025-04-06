@@ -1,6 +1,7 @@
 package ca.yarbond.bookclub.service;
 
 import ca.yarbond.bookclub.model.Book;
+import ca.yarbond.bookclub.repository.BookRepository;
 import ca.yarbond.bookclub.util.EpubCoverExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,10 +9,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,6 +31,7 @@ public class FileStorageService {
     private final Path coversStorageLocation;
     private final long maxFileSize;
     private final EpubCoverExtractor epubCoverExtractor;
+    private final BookRepository bookRepository;
 
     // Set of allowed file extensions
     private static final Set<String> ALLOWED_EXTENSIONS = new HashSet<>(
@@ -34,12 +42,14 @@ public class FileStorageService {
             @Value("${app.storage.books-location}") String booksStorageLocation,
             @Value("${app.storage.covers-location}") String coversStorageLocation,
             @Value("${app.storage.max-file-size}") long maxFileSize,
-            EpubCoverExtractor epubCoverExtractor) {
+            EpubCoverExtractor epubCoverExtractor,
+            BookRepository bookRepository) {
 
         this.booksStorageLocation = Paths.get(booksStorageLocation).toAbsolutePath().normalize();
         this.coversStorageLocation = Paths.get(coversStorageLocation).toAbsolutePath().normalize();
         this.maxFileSize = maxFileSize;
         this.epubCoverExtractor = epubCoverExtractor;
+        this.bookRepository = bookRepository;
 
         try {
             Files.createDirectories(this.booksStorageLocation);
@@ -95,6 +105,53 @@ public class FileStorageService {
             return filename;
         } catch (IOException ex) {
             throw new RuntimeException("Could not store file", ex);
+        }
+    }
+
+    /**
+     * Downloads a cover image from a remote URL and saves it for a book
+     *
+     * @param book The book to associate the cover with
+     * @param imageUrl The URL of the image to download
+     * @return The filename of the saved cover image
+     */
+    public String downloadRemoteCoverImage(Book book, String imageUrl) {
+        try {
+            // Generate a unique filename
+            String filename = UUID.randomUUID() + ".jpg";
+            Path coverPath = this.coversStorageLocation.resolve(filename);
+
+            // Create an HTTP client
+            HttpClient client = HttpClient.newBuilder()
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+
+            // Send the request to get the image
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(imageUrl))
+                    .GET()
+                    .build();
+
+            // Download the image
+            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Failed to download image: HTTP status " + response.statusCode());
+            }
+
+            // Save the image
+            try (InputStream inputStream = response.body()) {
+                Files.copy(inputStream, coverPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            // Update the book
+            book.setCoverImagePath(filename);
+            bookRepository.save(book);
+
+            return filename;
+        } catch (Exception e) {
+            throw new RuntimeException("Error downloading remote cover image: " + e.getMessage(), e);
         }
     }
 

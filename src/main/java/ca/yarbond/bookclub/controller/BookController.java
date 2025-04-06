@@ -4,9 +4,9 @@ import ca.yarbond.bookclub.model.Book;
 import ca.yarbond.bookclub.model.BookStatus;
 import ca.yarbond.bookclub.model.Member;
 import ca.yarbond.bookclub.model.Rating;
-import ca.yarbond.bookclub.service.BookService;
-import ca.yarbond.bookclub.service.MemberService;
-import ca.yarbond.bookclub.service.RatingService;
+import ca.yarbond.bookclub.service.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,15 +22,20 @@ import java.util.Map;
 @RequestMapping("/books")
 public class BookController {
 
+    private static final Logger logger = LoggerFactory.getLogger(BookController.class);
+
+
     private final BookService bookService;
     private final MemberService memberService;
     private final RatingService ratingService;
+    private final FileStorageService fileStorageService;
 
     @Autowired
-    public BookController(BookService bookService, MemberService memberService, RatingService ratingService) {
+    public BookController(BookService bookService, MemberService memberService, RatingService ratingService, FileStorageService fileStorageService) {
         this.bookService = bookService;
         this.memberService = memberService;
         this.ratingService = ratingService;
+        this.fileStorageService = fileStorageService;
     }
 
     @GetMapping
@@ -96,8 +101,29 @@ public class BookController {
         return "books/detail";
     }
 
+    /**
+     * Show the Add Book form
+     */
+    @GetMapping("/add")
+    public String showAddBookForm(Model model) {
+        model.addAttribute("book", new Book());
+        model.addAttribute("members", memberService.getAllMembers());
+        return "books/add";
+    }
+
+    /**
+     * Show the Edit Book form
+     */
+    @GetMapping("/{id}/edit")
+    public String showEditBookForm(@PathVariable Long id, Model model) {
+        Book book = bookService.getBookById(id);
+        model.addAttribute("book", book);
+        model.addAttribute("members", memberService.getAllMembers());
+        return "books/edit";
+    }
+
     @PostMapping
-    public String createBook(@ModelAttribute Book book, RedirectAttributes redirectAttributes) {
+    public String createBook(@ModelAttribute Book book, @RequestParam(required = false) String coverUrl, RedirectAttributes redirectAttributes) {
         try {
             // Get the actual Member object from the database
             if (book.getOwner() != null && book.getOwner().getId() != null) {
@@ -110,18 +136,38 @@ public class BookController {
                 book.setStatus(BookStatus.WISHLIST);
             }
 
+            // Make sure pageCount is handled properly (can be null)
+            if (book.getPageCount() != null && book.getPageCount() <= 0) {
+                book.setPageCount(null);
+            }
+
             Book createdBook = bookService.createBook(book);
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Book '" + createdBook.getTitle() + "' created successfully");
+
+            if (coverUrl != null && !coverUrl.isEmpty()) {
+                try {
+                    fileStorageService.downloadRemoteCoverImage(createdBook, coverUrl);
+                    redirectAttributes.addFlashAttribute("successMessage",
+                            "Book '" + createdBook.getTitle() + "' created successfully with cover image");
+                } catch (Exception e) {
+                    // Just log the error but continue - the book was created successfully
+                    logger.error("Failed to download cover image: {}", e.getMessage());
+                    redirectAttributes.addFlashAttribute("successMessage",
+                            "Book '" + createdBook.getTitle() + "' created successfully, but cover image could not be downloaded");
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Book '" + createdBook.getTitle() + "' created successfully");
+            }
             return "redirect:/books/" + createdBook.getId();
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/books";
+            return "redirect:/books/add";
         }
     }
 
     @PostMapping("/{id}")
     public String updateBook(@PathVariable Long id, @ModelAttribute Book book,
+                             @RequestParam(required = false) String coverUrl,
                              RedirectAttributes redirectAttributes) {
         try {
             // Get the actual Member object from the database if provided
@@ -130,9 +176,29 @@ public class BookController {
                 book.setOwner(owner);
             }
 
+            // Make sure pageCount is handled properly (can be null)
+            if (book.getPageCount() != null && book.getPageCount() <= 0) {
+                book.setPageCount(null);
+            }
+
             Book updatedBook = bookService.updateBook(id, book);
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Book '" + updatedBook.getTitle() + "' updated successfully");
+
+            // Handle remote cover image if provided
+            if (coverUrl != null && !coverUrl.isEmpty()) {
+                try {
+                    fileStorageService.downloadRemoteCoverImage(updatedBook, coverUrl);
+                    redirectAttributes.addFlashAttribute("successMessage",
+                            "Book '" + updatedBook.getTitle() + "' updated successfully with new cover image");
+                } catch (Exception e) {
+                    // Just log the error but continue - the book was updated successfully
+                    logger.error("Failed to download cover image: {}", e.getMessage());
+                    redirectAttributes.addFlashAttribute("successMessage",
+                            "Book '" + updatedBook.getTitle() + "' updated successfully, but cover image could not be downloaded");
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Book '" + updatedBook.getTitle() + "' updated successfully");
+            }
             return "redirect:/books/" + updatedBook.getId();
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());

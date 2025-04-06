@@ -17,3 +17,30 @@
     flex-direction: row;
   }
 }
+
+/* Responsive adjustments for the book search modal */
+@media (max-width: 576px) {
+    /* Make language buttons stack better on small screens */
+    #bookSearchModal .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    #bookSearchModal .btn-group .btn {
+        flex: 1 0 33%;
+        margin-bottom: 5px;
+    }
+
+    /* Adjust search result display for small screens */
+    #bookSearchModal .list-group-item .float-start {
+        float: none !important;
+        display: block;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    #bookSearchModal .list-group-item .float-start img {
+        max-width: 150px;
+        margin: 0 auto;
+    }
+}

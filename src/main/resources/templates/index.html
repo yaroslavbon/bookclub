@@ -42,7 +42,7 @@
                     </p>
                     <p><strong>Type: </strong><span
                             th:text="${currentBook.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span></p>
-
+                    <p th:if="${currentBook.pageCount != null}"><strong>Pages: </strong><span th:text="${currentBook.pageCount}">123</span></p>
                     <div th:if="${!#maps.isEmpty(currentBook.filePaths)}" class="mt-2">
                         <strong>Downloads: </strong>
                         <div class="d-flex gap-2 mt-1">
@@ -118,7 +118,7 @@
                     <p><strong>Owner: </strong><span th:text="${nextBook.owner.name}">Owner</span></p>
                     <p><strong>Type: </strong><span
                             th:text="${nextBook.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span></p>
-
+                    <p th:if="${nextBook.pageCount != null}"><strong>Pages: </strong><span th:text="${nextBook.pageCount}">123</span></p>
                     <div th:if="${!#maps.isEmpty(nextBook.filePaths)}" class="mt-2">
                         <strong>Downloads: </strong>
                         <div class="d-flex gap-2 mt-1">
@@ -167,6 +167,9 @@
                             <p class="card-text small text-muted" th:text="${book.comments}">Description</p>
                             <p class="small"><strong>Type: </strong>
                                 <span th:text="${book.fiction ? 'Fiction' : 'Non-Fiction'}">Type</span>
+                            </p>
+                            <p class="small" th:if="${book.pageCount != null}"><strong>Pages: </strong>
+                                <span th:text="${book.pageCount}">123</span>
                             </p>
                         </div>
                         <div class="card-footer bg-light text-center">

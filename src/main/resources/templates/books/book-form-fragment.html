@@ -1,0 +1,186 @@
+<!-- src/main/resources/templates/books/book-form-fragment.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Book Form Fragment -->
+<div th:fragment="bookForm(book, isEdit, members)">
+    <!-- Search Section - Collapsible -->
+    <div class="card mb-4">
+        <div class="card-header" id="searchCardHeader">
+            <button class="btn btn-link btn-sm text-decoration-none" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#searchSection" aria-expanded="false" aria-controls="searchSection">
+                <i class="bi bi-search me-1"></i> Search for Book Information
+            </button>
+        </div>
+
+        <div id="searchSection" class="collapse">
+            <div class="card-body">
+                <!-- Search Form -->
+                <form id="bookSearchForm" class="mb-4" onsubmit="return false;">
+                    <!-- Title Search Field -->
+                    <div class="mb-3">
+                        <label for="bookSearchTitle" class="form-label">Book Title</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="bookSearchTitle" placeholder="Enter book title">
+                            <button class="btn btn-outline-secondary clear-input" type="button" data-target="bookSearchTitle">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Author Search Field -->
+                    <div class="mb-3">
+                        <label for="bookSearchAuthor" class="form-label">Author</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="bookSearchAuthor" placeholder="Enter author name">
+                            <button class="btn btn-outline-secondary clear-input" type="button" data-target="bookSearchAuthor">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ISBN Search Field -->
+                    <div class="mb-3">
+                        <label for="bookSearchIsbn" class="form-label">ISBN</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="bookSearchIsbn" placeholder="Enter ISBN number">
+                            <button class="btn btn-outline-secondary clear-input" type="button" data-target="bookSearchIsbn">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Language Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Language</label>
+                        <div class="btn-group" role="group" aria-label="Search language">
+                            <input type="radio" class="btn-check" name="bookSearchLanguage" id="langRu" value="ru" checked>
+                            <label class="btn btn-outline-primary" for="langRu">Russian</label>
+
+                            <input type="radio" class="btn-check" name="bookSearchLanguage" id="langUk" value="uk">
+                            <label class="btn btn-outline-primary" for="langUk">Ukrainian</label>
+
+                            <input type="radio" class="btn-check" name="bookSearchLanguage" id="langEn" value="en">
+                            <label class="btn btn-outline-primary" for="langEn">English</label>
+                        </div>
+                    </div>
+
+                    <!-- Search Button -->
+                    <div class="d-grid">
+                        <button class="btn btn-primary" type="button" id="executeBookSearch">Search for Books</button>
+                    </div>
+                </form>
+
+                <!-- Search Results -->
+                <div id="searchResultsContainer">
+                    <div id="searchLoading" class="text-center py-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+
+                    <div id="searchNoResults" class="alert alert-light text-center" style="display: none;">
+                        No books found matching your search.
+                    </div>
+
+                    <div id="searchResults" class="list-group">
+                        <!-- Results will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Form Section -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Book Information</h5>
+        </div>
+        <div class="card-body">
+            <form th:with="formPath=${isEdit ? '/books/' + book.id : '/books'}" th:action="@{${formPath}}" method="post">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" name="title" th:value="${book.title}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="author" class="form-label">Author</label>
+                    <input type="text" class="form-control" id="author" name="author" th:value="${book.author}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="pageCount" class="form-label">Number of Pages</label>
+                    <input type="number" class="form-control" id="pageCount" name="pageCount" min="1" th:value="${book.pageCount}">
+                    <div class="form-text">Leave empty if unknown</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="fiction" name="fiction" th:checked="${book.fiction}">
+                        <label class="form-check-label" for="fiction">
+                            Fiction
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="owner.id" class="form-label">Owner</label>
+                    <select class="form-select" id="owner.id" name="owner.id" required>
+                        <option value="">Select Owner</option>
+                        <option th:each="member : ${members}"
+                                th:value="${member.id}"
+                                th:text="${member.name}"
+                                th:selected="${book.owner != null && book.owner.id == member.id}">Member</option>
+                    </select>
+                </div>
+
+                <!-- Status selection for edit mode only -->
+                <div class="mb-3" th:if="${isEdit}">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Select Status</option>
+                        <option th:each="statusOption : ${T(ca.yarbond.bookclub.model.BookStatus).values()}"
+                                th:value="${statusOption}"
+                                th:text="${statusOption.toString()}"
+                                th:selected="${book.status == statusOption}">Status</option>
+                    </select>
+                </div>
+
+                <!-- For new books, set status to WISHLIST by default -->
+                <input th:if="${!isEdit}" type="hidden" name="status" value="WISHLIST">
+
+                <div class="mb-3">
+                    <label for="comments" class="form-label">Comments</label>
+                    <textarea class="form-control" id="comments" name="comments" rows="3" th:text="${book.comments}"></textarea>
+                </div>
+
+                <!-- Cover image section -->
+                <div class="mb-3">
+                    <label class="form-label">Cover Image</label>
+                    <input type="hidden" id="coverUrl" name="coverUrl">
+
+                    <!-- Current cover (edit mode) -->
+                    <div th:if="${isEdit && book.coverImagePath != null}" class="mb-2">
+                        <p class="form-text">Current cover image:</p>
+                        <img th:src="@{'/files/covers/' + ${book.coverImagePath}}"
+                             class="img-thumbnail" style="max-height: 200px;" alt="Current cover">
+                        <p class="form-text">Selecting a book from search will replace this image.</p>
+                    </div>
+
+                    <!-- Cover preview (when selected from search) -->
+                    <div id="coverPreview" class="text-center" style="display: none;">
+                        <!-- Image will be inserted here by JS -->
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save Book</button>
+                    <a th:with="cancelPath=${isEdit ? '/books/' + book.id : '/books'}"
+                       th:href="@{${cancelPath}}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

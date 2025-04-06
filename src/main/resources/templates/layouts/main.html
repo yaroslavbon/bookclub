@@ -83,7 +83,13 @@
 <script th:inline="javascript">
     const contextPath = '/bookclub';
 </script>
+
 <script th:src="@{/js/theme.js}"></script>
+
+<!-- Add additional scripts if any -->
+<th:block th:if="${additionalScripts != null}">
+    <th:block th:replace="${additionalScripts}"></th:block>
+</th:block>
 
 <!-- Page-specific scripts -->
 <th:block th:replace="${scripts}"></th:block>

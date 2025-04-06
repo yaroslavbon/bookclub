@@ -29,6 +29,9 @@ public class Book {
     @Column(name = "is_fiction")
     private boolean fiction;
 
+    @Column(name = "page_count")
+    private Integer pageCount;
+
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     @ToString.Exclude @EqualsAndHashCode.Exclude
