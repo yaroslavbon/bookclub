@@ -7,6 +7,10 @@ import ca.yarbond.bookclub.model.MemberQueueItem;
 import ca.yarbond.bookclub.repository.BookRepository;
 import ca.yarbond.bookclub.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,9 +43,32 @@ public class BookService {
     public List<Book> getAllBooks() {
         return bookRepository.findAll();
     }
+    
+    /**
+     * Get all books with pagination
+     */
+    public Page<Book> getAllBooks(int page, int size) {
+        // Default sort by ID DESC for non-completed books
+        return bookRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
+    }
 
     public List<Book> getBooksByStatus(BookStatus status) {
         return bookRepository.findByStatus(status);
+    }
+    
+    /**
+     * Get books by status with pagination
+     * For COMPLETED books, sorts by completionDate DESC
+     * For other statuses, sorts by id DESC
+     */
+    public Page<Book> getBooksByStatus(BookStatus status, int page, int size) {
+        Pageable pageable;
+        if (status == BookStatus.COMPLETED) {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "completionDate"));
+        } else {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        }
+        return bookRepository.findByStatus(status, pageable);
     }
 
     public List<Book> getBooksByOwner(Member owner) {
@@ -51,6 +78,13 @@ public class BookService {
     public List<Book> getBooksByOwnerId(Long ownerId) {
         return bookRepository.findByOwnerId(ownerId);
     }
+    
+    /**
+     * Get books by owner ID with pagination
+     */
+    public Page<Book> getBooksByOwnerId(Long ownerId, int page, int size) {
+        return bookRepository.findByOwnerId(ownerId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
+    }
 
     public List<Book> getBooksByOwnerAndStatus(Member owner, BookStatus status) {
         return bookRepository.findByOwnerAndStatus(owner, status);
@@ -58,6 +92,19 @@ public class BookService {
 
     public List<Book> getBooksByOwnerIdAndStatus(Long ownerId, BookStatus status) {
         return bookRepository.findByOwnerIdAndStatus(ownerId, status);
+    }
+    
+    /**
+     * Get books by owner ID and status with pagination
+     */
+    public Page<Book> getBooksByOwnerIdAndStatus(Long ownerId, BookStatus status, int page, int size) {
+        Pageable pageable;
+        if (status == BookStatus.COMPLETED) {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "completionDate"));
+        } else {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        }
+        return bookRepository.findByOwnerIdAndStatus(ownerId, status, pageable);
     }
 
     public List<Book> getRecentlyCompletedBooks() {
@@ -67,9 +114,59 @@ public class BookService {
     public List<Book> getAllCompletedBooks() {
         return bookRepository.findByStatus(BookStatus.COMPLETED);
     }
+    
+    /**
+     * Get all completed books with pagination, sorted by completion date
+     */
+    public Page<Book> getAllCompletedBooks(int page, int size) {
+        return bookRepository.findByStatus(BookStatus.COMPLETED, 
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "completionDate")));
+    }
 
     public List<Book> searchBooks(String searchTerm) {
         return bookRepository.searchBooks(searchTerm);
+    }
+    
+    /**
+     * Search books with pagination
+     */
+    public Page<Book> searchBooks(String searchTerm, int page, int size) {
+        return bookRepository.searchBooks(searchTerm, 
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
+    }
+    
+    /**
+     * Search books with status filter and pagination
+     */
+    public Page<Book> searchBooksByStatus(String searchTerm, BookStatus status, int page, int size) {
+        Pageable pageable;
+        if (status == BookStatus.COMPLETED) {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "completionDate"));
+        } else {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        }
+        return bookRepository.searchBooksByStatus(searchTerm, status, pageable);
+    }
+    
+    /**
+     * Search books with owner filter and pagination
+     */
+    public Page<Book> searchBooksByOwnerId(String searchTerm, Long ownerId, int page, int size) {
+        return bookRepository.searchBooksByOwnerId(searchTerm, ownerId, 
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
+    }
+    
+    /**
+     * Search books with both status and owner filters and pagination
+     */
+    public Page<Book> searchBooksByStatusAndOwnerId(String searchTerm, BookStatus status, Long ownerId, int page, int size) {
+        Pageable pageable;
+        if (status == BookStatus.COMPLETED) {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "completionDate"));
+        } else {
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        }
+        return bookRepository.searchBooksByStatusAndOwnerId(searchTerm, status, ownerId, pageable);
     }
 
     public Book getCurrentBook() {

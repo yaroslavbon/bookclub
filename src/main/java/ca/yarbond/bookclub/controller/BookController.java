@@ -8,6 +8,7 @@ import ca.yarbond.bookclub.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -18,24 +19,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static ca.yarbond.bookclub.service.BookSearchService.DEFAULT_PAGE_SIZE;
+
 @Controller
 @RequestMapping("/books")
 public class BookController {
 
     private static final Logger logger = LoggerFactory.getLogger(BookController.class);
 
-
     private final BookService bookService;
     private final MemberService memberService;
     private final RatingService ratingService;
     private final FileStorageService fileStorageService;
+    private final BookSearchService bookSearchService;
 
     @Autowired
-    public BookController(BookService bookService, MemberService memberService, RatingService ratingService, FileStorageService fileStorageService) {
+    public BookController(BookService bookService, MemberService memberService, 
+                         RatingService ratingService, FileStorageService fileStorageService,
+                         BookSearchService bookSearchService) {
         this.bookService = bookService;
         this.memberService = memberService;
         this.ratingService = ratingService;
         this.fileStorageService = fileStorageService;
+        this.bookSearchService = bookSearchService;
     }
 
     @GetMapping
@@ -43,41 +49,27 @@ public class BookController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long ownerId,
+            @RequestParam(defaultValue = "0") int page,
             Model model) {
-        BookStatus bookStatus = status != null && !status.trim().isEmpty()
-                ? BookStatus.valueOf(status.toUpperCase()) : null;
+        
+        // Use the search service to get books with applied filters
+        Page<Book> bookPage = bookSearchService.searchBooks(search, status, ownerId, page);
+        
+        // Add the book list and pagination data to the model
+        model.addAttribute("books", bookPage.getContent());
+        model.addAttribute("totalPages", bookPage.getTotalPages());
+        model.addAttribute("totalItems", bookPage.getTotalElements());
 
-        List<Book> books;
-
-        // Apply filters
-        if (search != null && !search.trim().isEmpty()) {
-            books = bookService.searchBooks(search);
-
-            if(bookStatus != null)
-                books = books.stream()
-                        .filter(book -> bookStatus.equals(book.getStatus()))
-                        .toList();
-
-
-            if(ownerId != null)
-                books = books.stream()
-                        .filter(book -> ownerId.equals(book.getOwner().getId()))
-                        .toList();
-
-
-        } else if (status != null && !status.trim().isEmpty()) {
-            if(ownerId != null)
-                books = bookService.getBooksByOwnerIdAndStatus(ownerId,
-                        bookStatus);
-            else
-                books = bookService.getBooksByStatus(bookStatus);
-        } else if (ownerId != null) {
-            books = bookService.getBooksByOwnerId(ownerId);
-        } else {
-            books = bookService.getAllBooks();
-        }
-
-        model.addAttribute("books", books);
+        // Add pagination info
+        model.addAttribute("currentPage", page);
+        model.addAttribute("pageSize", DEFAULT_PAGE_SIZE);
+        
+        // Include current filter parameters for pagination links
+        model.addAttribute("search", search);
+        model.addAttribute("status", status);
+        model.addAttribute("ownerId", ownerId);
+        
+        // Other attributes
         model.addAttribute("newBook", new Book());
         model.addAttribute("members", memberService.getAllMembers());
         model.addAttribute("statuses", BookStatus.values());
