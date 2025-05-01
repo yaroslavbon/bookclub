@@ -16,6 +16,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.servlet.http.HttpSession;
 
 import java.util.HashMap;
 import java.util.List;
@@ -117,7 +118,14 @@ public class BookController {
      */
     @GetMapping("/add")
     public String showAddBookForm(Model model) {
-        model.addAttribute("book", new Book());
+        // Get current authenticated user for default owner
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Member currentMember = memberService.getMemberByName(auth.getName());
+        
+        Book book = new Book();
+        book.setOwner(currentMember);
+        
+        model.addAttribute("book", book);
         model.addAttribute("members", memberService.getAllMembers());
         return "books/add";
     }
@@ -130,16 +138,34 @@ public class BookController {
         Book book = bookService.getBookById(id);
         model.addAttribute("book", book);
         model.addAttribute("members", memberService.getAllMembers());
+        
         return "books/edit";
     }
 
     @PostMapping
-    public String createBook(@ModelAttribute Book book, @RequestParam(required = false) String coverUrl, RedirectAttributes redirectAttributes) {
+    public String createBook(@ModelAttribute Book book, @RequestParam(required = false) String coverUrl, 
+                            HttpSession session, RedirectAttributes redirectAttributes) {
         try {
-            // Get the actual Member object from the database
-            if (book.getOwner() != null && book.getOwner().getId() != null) {
+            // Check if user is in admin mode
+            boolean adminModeEnabled = false;
+            if (session.getAttribute("adminModeEnabled") != null) {
+                adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            }
+            
+            // If not in admin mode, set the owner to current user regardless of what was submitted
+            if (!adminModeEnabled) {
+                Member currentMember = memberService.getMemberByName(SecurityContextHolder
+                        .getContext().getAuthentication().getName());
+                book.setOwner(currentMember);
+            } 
+            // If in admin mode, get the selected member from the database
+            else if (book.getOwner() != null && book.getOwner().getId() != null) {
                 Member owner = memberService.getMemberById(book.getOwner().getId());
                 book.setOwner(owner);
+            } 
+            // No owner specified - throw exception
+            else {
+                throw new IllegalArgumentException("Book owner must be specified");
             }
 
             // Set default status if not provided
@@ -179,12 +205,29 @@ public class BookController {
     @PostMapping("/{id}")
     public String updateBook(@PathVariable Long id, @ModelAttribute Book book,
                              @RequestParam(required = false) String coverUrl,
-                             RedirectAttributes redirectAttributes) {
+                             HttpSession session, RedirectAttributes redirectAttributes) {
         try {
-            // Get the actual Member object from the database if provided
-            if (book.getOwner() != null && book.getOwner().getId() != null) {
+            // Get existing book to check ownership
+            Book existingBook = bookService.getBookById(id);
+            
+            // Check if user is in admin mode
+            boolean adminModeEnabled = false;
+            if (session.getAttribute("adminModeEnabled") != null) {
+                adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            }
+            
+            // If not in admin mode, keep the original owner regardless of what was submitted
+            if (!adminModeEnabled) {
+                book.setOwner(existingBook.getOwner());
+            }
+            // If in admin mode, get the selected member from the database
+            else if (book.getOwner() != null && book.getOwner().getId() != null) {
                 Member owner = memberService.getMemberById(book.getOwner().getId());
                 book.setOwner(owner);
+            }
+            // No owner specified - throw exception
+            else {
+                throw new IllegalArgumentException("Book owner must be specified");
             }
 
             // Make sure pageCount is handled properly (can be null)
@@ -246,13 +289,12 @@ public class BookController {
 
     @PostMapping("/{id}/rate")
     public String rateBook(@PathVariable Long id,
-                           @RequestParam Long memberId,
                            @RequestParam Integer readabilityRating,
                            @RequestParam Integer contentRating,
                            @RequestParam(required = false) String comments,
                            RedirectAttributes redirectAttributes) {
         try {
-            ratingService.createOrUpdateRating(id, memberId, readabilityRating, contentRating, comments);
+            ratingService.createOrUpdateRating(id, readabilityRating, contentRating, comments);
             redirectAttributes.addFlashAttribute("successMessage", "Rating submitted successfully");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Failed to submit rating: " + e.getMessage());
@@ -298,6 +340,19 @@ public class BookController {
                                @RequestParam Long bookId,
                                RedirectAttributes redirectAttributes) {
         try {
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Member currentMember = memberService.getMemberByName(auth.getName());
+            
+            // Get the rating
+            Rating rating = ratingService.getRatingById(id);
+            
+            // Check if current user is the rating owner
+            if (!rating.getMember().getId().equals(currentMember.getId())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "You can only delete your own ratings");
+                return "redirect:/books/" + bookId;
+            }
+            
             ratingService.deleteRating(id);
             redirectAttributes.addFlashAttribute("successMessage", "Rating deleted successfully");
             return "redirect:/books/" + bookId;

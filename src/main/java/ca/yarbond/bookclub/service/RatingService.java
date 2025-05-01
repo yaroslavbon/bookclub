@@ -7,6 +7,8 @@ import ca.yarbond.bookclub.repository.BookRepository;
 import ca.yarbond.bookclub.repository.MemberRepository;
 import ca.yarbond.bookclub.repository.RatingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,19 +48,21 @@ public class RatingService {
     }
 
     /**
-     * Creates or updates a rating
+     * Creates or updates a rating using the currently authenticated user
      */
     @Transactional
-    public Rating createOrUpdateRating(Long bookId, Long memberId, Integer readabilityRating,
-                                       Integer contentRating, String comments) {
+    public Rating createOrUpdateRating(Long bookId, Integer readabilityRating,
+                                     Integer contentRating, String comments) {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Book not found with id: " + bookId));
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("Member not found with id: " + memberId));
+        // Get current authenticated user
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Member member = memberRepository.findByName(auth.getName())
+                .orElseThrow(() -> new RuntimeException("Member not found for logged in user: " + auth.getName()));
 
         // Check if rating already exists
-        Optional<Rating> existingRating = ratingRepository.findByBookIdAndMemberId(bookId, memberId);
+        Optional<Rating> existingRating = ratingRepository.findByBookIdAndMemberId(bookId, member.getId());
 
         if (existingRating.isPresent()) {
             Rating rating = existingRating.get();

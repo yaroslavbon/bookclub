@@ -123,7 +123,8 @@
                     </div>
                 </div>
 
-                <div class="mb-3">
+                <!-- Owner selection - only visible in admin mode -->
+                <div class="mb-3" th:if="${session.adminModeEnabled}">
                     <label for="owner.id" class="form-label">Owner</label>
                     <select class="form-select" id="owner.id" name="owner.id" required>
                         <option value="">Select Owner</option>
@@ -132,6 +133,13 @@
                                 th:text="${member.name}"
                                 th:selected="${book.owner != null && book.owner.id == member.id}">Member</option>
                     </select>
+                </div>
+                
+                <!-- For non-admin users, display owner as text and hidden input -->
+                <div class="mb-3" th:unless="${session.adminModeEnabled}">
+                    <label class="form-label">Owner</label>
+                    <p class="form-control-plaintext" th:text="${book.owner != null ? book.owner.name : 'You'}">Owner Name</p>
+                    <input type="hidden" name="owner.id" th:value="${book.owner != null ? book.owner.id : ''}">
                 </div>
 
                 <!-- Status selection for edit mode only -->

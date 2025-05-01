@@ -258,8 +258,9 @@
                                     <p th:if="${rating.comments}" class="mb-0 small text-muted"
                                        th:text="${rating.comments}">Comments</p>
 
-                                    <!-- Delete button positioned at the top-right -->
-                                    <form th:action="@{/books/ratings/{id}/delete(id=${rating.id})}" method="post"
+                                    <!-- Delete button positioned at the top-right - only for current user's ratings -->
+                                    <form th:if="${currentMember != null && rating.member.id == currentMember.id}"
+                                          th:action="@{/books/ratings/{id}/delete(id=${rating.id})}" method="post"
                                           class="position-absolute top-0 end-0">
                                         <input type="hidden" th:name="bookId" th:value="${book.id}">
                                         <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -281,16 +282,8 @@
                         </div>
                         <div class="card-body">
                             <form th:action="@{/books/{id}/rate(id=${book.id})}" method="post">
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="memberId" class="form-label">Member</label>
-                                        <select class="form-select" id="memberId" name="memberId" required>
-                                            <option value="">Select your name</option>
-                                            <option th:each="member : ${members}" th:value="${member.id}"
-                                                    th:text="${member.name}">Member
-                                            </option>
-                                        </select>
-                                    </div>
+                                <div class="alert alert-info mb-3">
+                                    You are submitting a rating as <strong th:text="${currentMember.name}">Current User</strong>
                                 </div>
 
                                 <div class="row mb-3">
