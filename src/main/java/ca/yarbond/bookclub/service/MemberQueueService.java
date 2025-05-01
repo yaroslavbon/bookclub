@@ -8,11 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class MemberQueueService {
@@ -67,14 +64,14 @@ public class MemberQueueService {
      * Adds a new member to the end of the queue
      */
     @Transactional
-    public MemberQueueItem addMemberToQueue(Long memberId) {
+    public void addMemberToQueue(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found with id: " + memberId));
 
         // Check if member already exists in queue
         Optional<MemberQueueItem> existingQueueItem = memberQueueRepository.findByMember(member);
         if (existingQueueItem.isPresent()) {
-            throw new RuntimeException("Member already exists in queue: " + member.getName());
+            return;
         }
 
         // Find the highest position
@@ -88,7 +85,7 @@ public class MemberQueueService {
         newQueueItem.setMember(member);
         newQueueItem.setPosition(maxPosition + 1);
 
-        return memberQueueRepository.save(newQueueItem);
+        memberQueueRepository.save(newQueueItem);
     }
 
     /**
