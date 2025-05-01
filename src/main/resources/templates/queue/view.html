@@ -86,7 +86,7 @@
             </div>
 
             <div th:if="${currentMember != null}" class="mt-4">
-                <form th:action="@{/queue/rotate}" method="post">
+                <form th:if="${session.adminModeEnabled}" th:action="@{/queue/rotate}" method="post">
                     <button type="submit" class="btn btn-success">
                         Rotate Queue (Complete Current Turn)
                     </button>
@@ -112,7 +112,7 @@
                     <tr>
                         <th>Position</th>
                         <th>Member</th>
-                        <th>Manage position</th>
+                        <th th:if="${session.adminModeEnabled}">Manage position</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -131,7 +131,7 @@
                             </span>
                         </td>
                         <td class="fw-medium" th:text="${item.member.name}">Member Name</td>
-                        <td>
+                        <td th:if="${session.adminModeEnabled}">
                             <div class="d-flex gap-2">
                                 <!-- Move Up button -->
                                 <form th:action="@{/queue/member/{id}/move-up(id=${item.member.id})}" method="post" class="d-inline">
@@ -160,8 +160,8 @@
     <!-- All Members -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <div class="px-4 py-2 border-bottom d-flex justify-content-between align-items-center">
-            <h3 class="fs-5 fw-semibold mb-0">Member Management</h3>
-            <button sec:authorize="hasRole('ADMIN')" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+            <h3 class="fs-5 fw-semibold mb-0">Members</h3>
+            <button th:if="${session.adminModeEnabled}" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addMemberModal">
                 Add New Member
             </button>
         </div>
@@ -180,7 +180,7 @@
                         <th>Total Picks</th>
                         <th>Wishlist Books</th>
                         <th>Status</th>
-                        <th sec:authorize="hasRole('ADMIN')">Actions</th>
+                        <th th:if="${session.adminModeEnabled}">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -198,7 +198,7 @@
                             <span th:if="${member.active}" class="badge bg-success">Active</span>
                             <span th:unless="${member.active}" class="badge bg-danger">Inactive</span>
                         </td>
-                        <td sec:authorize="hasRole('ADMIN')">
+                        <td th:if="${session.adminModeEnabled}">
                             <div class="d-flex gap-2">
                                 <!-- Toggle Status (and queue membership) -->
                                 <form th:action="@{/queue/members/{id}/toggle-status(id=${member.id})}" method="post" class="d-inline">
@@ -243,7 +243,7 @@
                 </table>
             </div>
 
-            <div class="mt-4 bg-warning bg-opacity-10 border border-warning rounded p-4">
+            <div th:if="${session.adminModeEnabled}" class="mt-4 bg-warning bg-opacity-10 border border-warning rounded p-4">
                 <h5 class="fw-semibold text-warning-emphasis mb-2">Member Management Notes</h5>
                 <ul class="mt-2 mb-0 text-muted small">
                     <li>Active members are automatically included in the reading rotation queue</li>
@@ -256,7 +256,7 @@
     </div>
 
     <!-- Add Member Modal -->
-    <div class="modal fade" id="addMemberModal" tabindex="-1" sec:authorize="hasRole('ADMIN')">
+    <div class="modal fade" id="addMemberModal" tabindex="-1" th:if="${session.adminModeEnabled}">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -283,7 +283,7 @@
     </div>
 
     <!-- Edit Member Modal -->
-    <div class="modal fade" id="editMemberModal" tabindex="-1" sec:authorize="hasRole('ADMIN')">
+    <div class="modal fade" id="editMemberModal" tabindex="-1" th:if="${session.adminModeEnabled}">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -307,7 +307,7 @@
     </div>
 
     <!-- Delete Member Modal -->
-    <div class="modal fade" id="deleteMemberModal" tabindex="-1" sec:authorize="hasRole('ADMIN')">
+    <div class="modal fade" id="deleteMemberModal" tabindex="-1" th:if="${session.adminModeEnabled}">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">

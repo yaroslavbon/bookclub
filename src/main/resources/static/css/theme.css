@@ -2,23 +2,16 @@
  * Dark mode theme styles for Book Club application
  */
 
-/* Theme toggle button styles */
+/* Theme toggle button styles - we're now using btn class for consistent styling */
 .theme-toggle-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    background-color: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    margin-right: 10px;
 }
 
-.theme-toggle-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+.theme-toggle-btn i {
+    font-size: 1rem;
 }
 
 /* Login page theme toggle */

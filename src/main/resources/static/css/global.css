@@ -10,6 +10,18 @@
   .book-summary .book-summary-details {
     flex-direction: column;
   }
+  
+  /* Navbar mobile improvements */
+  .navbar .navbar-nav .nav-link {
+    padding: 0.5rem 0;
+  }
+  
+  /* Add more visible separators between nav elements on mobile */
+  .navbar-nav {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
 }
 
 @media (min-width: 577px) {

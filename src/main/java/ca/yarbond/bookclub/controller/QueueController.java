@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.servlet.http.HttpSession;
 
 import java.util.HashMap;
 import java.util.List;
@@ -84,8 +85,15 @@ public class QueueController {
     }
 
     @PostMapping("/rotate")
-    public String rotateQueue(RedirectAttributes redirectAttributes) {
+    public String rotateQueue(HttpSession session, RedirectAttributes redirectAttributes) {
         try {
+            // Check if admin mode is enabled
+            Boolean adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            if (adminModeEnabled == null || !adminModeEnabled) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Admin mode required to rotate queue");
+                return "redirect:/queue";
+            }
+            
             memberQueueService.rotateQueue();
             redirectAttributes.addFlashAttribute("successMessage", "Queue rotated successfully");
         } catch (Exception e) {
@@ -95,8 +103,15 @@ public class QueueController {
     }
 
     @PostMapping("/member/{id}/move-up")
-    public String moveMemberUp(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String moveMemberUp(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
+            // Check if admin mode is enabled
+            Boolean adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            if (adminModeEnabled == null || !adminModeEnabled) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Admin mode required to manage queue positions");
+                return "redirect:/queue";
+            }
+            
             MemberQueueItem queueItem = memberQueueService.getQueueItemByMemberId(id);
             if (queueItem.getPosition() > 0) {
                 memberQueueService.moveMemberToPosition(id, queueItem.getPosition() - 1);
@@ -113,8 +128,15 @@ public class QueueController {
     }
 
     @PostMapping("/member/{id}/move-down")
-    public String moveMemberDown(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String moveMemberDown(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
+            // Check if admin mode is enabled
+            Boolean adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            if (adminModeEnabled == null || !adminModeEnabled) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Admin mode required to manage queue positions");
+                return "redirect:/queue";
+            }
+            
             MemberQueueItem queueItem = memberQueueService.getQueueItemByMemberId(id);
             List<MemberQueueItem> allItems = memberQueueService.getQueue();
             if (queueItem.getPosition() < allItems.size() - 1) {
@@ -134,17 +156,24 @@ public class QueueController {
     // New Member Management Methods
 
     @PostMapping("/members")
-    public String createMember(@ModelAttribute Member member,
+    public String createMember(@ModelAttribute Member member, HttpSession session,
                                RedirectAttributes redirectAttributes) {
         try {
+            // Check if admin mode is enabled
+            Boolean adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            if (adminModeEnabled == null || !adminModeEnabled) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Admin mode required to create members");
+                return "redirect:/queue";
+            }
+            
             // Generate a random password
             String generatedPassword = memberService.generateRandomPassword();
             Member createdMember = memberService.createMember(member, generatedPassword);
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Member '" + createdMember.getName() + "' created and added to queue");
-            redirectAttributes.addFlashAttribute("generatedPassword", generatedPassword);
-            redirectAttributes.addFlashAttribute("newMemberId", createdMember.getId());
+            redirectAttributes.addFlashAttribute("resetPassword", generatedPassword);
+            redirectAttributes.addFlashAttribute("resetPasswordFor", createdMember.getId());
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
@@ -153,8 +182,15 @@ public class QueueController {
 
     @PostMapping("/members/{id}")
     public String updateMemberName(@PathVariable Long id, @ModelAttribute Member member,
-                                   RedirectAttributes redirectAttributes) {
+                                   HttpSession session, RedirectAttributes redirectAttributes) {
         try {
+            // Check if admin mode is enabled
+            Boolean adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            if (adminModeEnabled == null || !adminModeEnabled) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Admin mode required to update members");
+                return "redirect:/queue";
+            }
+            
             Member updatedMember = memberService.updateMemberName(id, member.getName());
             redirectAttributes.addFlashAttribute("successMessage",
                     "Member '" + updatedMember.getName() + "' updated successfully");
@@ -165,8 +201,15 @@ public class QueueController {
     }
 
     @PostMapping("/members/{id}/toggle-status")
-    public String toggleMemberStatus(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String toggleMemberStatus(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
+            // Check if admin mode is enabled
+            Boolean adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            if (adminModeEnabled == null || !adminModeEnabled) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Admin mode required to toggle member status");
+                return "redirect:/queue";
+            }
+            
             Member updatedMember = memberService.toggleStatus(id);
 
             // Manage queue membership based on active status
@@ -184,8 +227,15 @@ public class QueueController {
     }
 
     @PostMapping("/members/{id}/delete")
-    public String deleteMember(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteMember(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
+            // Check if admin mode is enabled
+            Boolean adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            if (adminModeEnabled == null || !adminModeEnabled) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Admin mode required to delete members");
+                return "redirect:/queue";
+            }
+            
             // Check if member has books
             int bookCount = bookService.getBooksByOwnerId(id).size();
             if (bookCount > 0) {
@@ -204,8 +254,15 @@ public class QueueController {
     }
     
     @PostMapping("/members/{id}/reset-password")
-    public String resetMemberPassword(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String resetMemberPassword(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
+            // Check if admin mode is enabled
+            Boolean adminModeEnabled = (Boolean) session.getAttribute("adminModeEnabled");
+            if (adminModeEnabled == null || !adminModeEnabled) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Admin mode required to reset passwords");
+                return "redirect:/queue";
+            }
+            
             Member member = memberService.getMemberById(id);
             String newPassword = memberService.resetPassword(id);
             
