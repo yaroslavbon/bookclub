@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -32,16 +34,18 @@ public class BookController {
     private final RatingService ratingService;
     private final FileStorageService fileStorageService;
     private final BookSearchService bookSearchService;
+    private final BookCompletionService bookCompletionService;
 
     @Autowired
     public BookController(BookService bookService, MemberService memberService, 
                          RatingService ratingService, FileStorageService fileStorageService,
-                         BookSearchService bookSearchService) {
+                         BookSearchService bookSearchService, BookCompletionService bookCompletionService) {
         this.bookService = bookService;
         this.memberService = memberService;
         this.ratingService = ratingService;
         this.fileStorageService = fileStorageService;
         this.bookSearchService = bookSearchService;
+        this.bookCompletionService = bookCompletionService;
     }
 
     @GetMapping
@@ -84,10 +88,25 @@ public class BookController {
         List<Rating> ratings = ratingService.getRatingsByBookId(id);
         Map<String, Double> averageRatings = ratingService.getAverageRatings(id);
 
+        // Get current authenticated user
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Member currentMember = memberService.getMemberByName(auth.getName());
+        
+        // Get book completion records and counts
+        boolean hasFinishedReading = bookCompletionService.hasReadBook(id, currentMember.getId());
+        int readCount = bookCompletionService.getReadCountForBook(id);
+        int activeMembers = memberService.getActiveMembers().size();
+        int requiredReaders = Math.max(1, (int) Math.ceil(activeMembers * 0.5)); // 50%, minimum 1
+        
         model.addAttribute("book", book);
         model.addAttribute("ratings", ratings);
         model.addAttribute("averageRatings", averageRatings);
         model.addAttribute("members", memberService.getAllMembers());
+        model.addAttribute("currentMember", currentMember);
+        model.addAttribute("hasFinishedReading", hasFinishedReading);
+        model.addAttribute("readCount", readCount);
+        model.addAttribute("activeMembers", activeMembers);
+        model.addAttribute("requiredReaders", requiredReaders);
         model.addAttribute("activeTab", "books");
 
         return "books/detail";
@@ -242,14 +261,21 @@ public class BookController {
     }
 
     @PostMapping("/{id}/did-not-read")
-    public String markAsDidNotRead(@PathVariable Long id,
-                                   @RequestParam Long memberId,
-                                   RedirectAttributes redirectAttributes) {
+    public String markAsDidNotRead(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            ratingService.markAsDidNotRead(id, memberId);
-            redirectAttributes.addFlashAttribute("successMessage", "Marked as 'Did Not Read' successfully");
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Member member = memberService.getMemberByName(auth.getName());
+            
+            // Remove the book completion record
+            if (bookCompletionService.hasReadBook(id, member.getId())) {
+                bookCompletionService.removeBookCompletionRecord(id, member.getId());
+                redirectAttributes.addFlashAttribute("successMessage", "Marked as not read");
+            } else {
+                redirectAttributes.addFlashAttribute("warningMessage", "You haven't marked this book as read yet");
+            }
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Failed to mark as 'Did Not Read': " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
         }
         return "redirect:/books/" + id;
     }
@@ -298,5 +324,33 @@ public class BookController {
         model.addAttribute("memberRatingsMap", memberRatingsMap);
 
         return "books/ratings-fragment :: bookRatings";
+    }
+    
+    @PostMapping("/{id}/finished-reading")
+    public String markAsFinishedReading(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            Book book = bookService.getBookById(id);
+
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Member member = memberService.getMemberByName(auth.getName());
+            
+            // Check if already marked as read
+            if (bookCompletionService.hasReadBook(id, member.getId())) {
+                redirectAttributes.addFlashAttribute("warningMessage", 
+                        "You have already marked this book as finished reading");
+                return "redirect:/books/" + id;
+            }
+            
+            // Mark book as read
+            bookCompletionService.markBookAsRead(id, member.getId());
+            
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "You have marked this book as finished reading");
+            
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/books/" + id;
     }
 }

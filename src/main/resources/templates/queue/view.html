@@ -7,6 +7,31 @@
 </head>
 <body>
 <th:block th:fragment="content">
+    <!-- Password Reset Modal -->
+    <div th:if="${resetPassword != null && resetPasswordFor != null}" class="modal fade" id="passwordResetModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Password Reset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <p>Password has been reset for this member. Please copy and share it securely.</p>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="resetPasswordField" th:value="${resetPassword}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyPassword()">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Queue Status -->
     <div class="bg-white rounded-lg shadow-md mb-4 overflow-hidden">
         <div class="px-4 py-2 border-bottom">
@@ -182,6 +207,13 @@
                                         <i class="bi" th:classappend="${member.active ? 'bi-toggle-on' : 'bi-toggle-off'}"></i>
                                     </button>
                                 </form>
+                                
+                                <!-- Reset Password -->
+                                <form th:action="@{/queue/members/{id}/reset-password(id=${member.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Reset Password">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                </form>
 
                                 <!-- Edit -->
                                 <button class="btn btn-sm btn-outline-primary"
@@ -314,6 +346,31 @@
             document.getElementById('deleteMemberName').textContent = memberName;
             document.getElementById('deleteMemberForm').action = contextPath + '/queue/members/' + memberId + '/delete';
         }
+        
+        // Function to copy password to clipboard
+        function copyPassword() {
+            var passwordField = document.getElementById('resetPasswordField');
+            passwordField.select();
+            document.execCommand('copy');
+            
+            // Show a confirmation
+            var button = document.querySelector('#resetPasswordField + button');
+            var originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i> Copied!';
+            
+            setTimeout(function() {
+                button.innerHTML = originalText;
+            }, 2000);
+        }
+        
+        // Show password reset modal if it exists
+        document.addEventListener('DOMContentLoaded', function() {
+            var passwordResetModal = document.getElementById('passwordResetModal');
+            if (passwordResetModal) {
+                var modal = new bootstrap.Modal(passwordResetModal);
+                modal.show();
+            }
+        });
     </script>
 </th:block>
 </body>

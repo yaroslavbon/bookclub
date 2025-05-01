@@ -38,7 +38,4 @@ public class Rating {
 
     @Column(name = "date_rated")
     private LocalDate dateRated = LocalDate.now();
-
-    @Column(name = "did_not_read")
-    private boolean didNotRead = false;
 }

@@ -65,7 +65,6 @@ public class RatingService {
             rating.setReadabilityRating(readabilityRating);
             rating.setContentRating(contentRating);
             rating.setComments(comments);
-            rating.setDidNotRead(false);
             return ratingRepository.save(rating);
         } else {
             Rating rating = new Rating();
@@ -74,39 +73,11 @@ public class RatingService {
             rating.setReadabilityRating(readabilityRating);
             rating.setContentRating(contentRating);
             rating.setComments(comments);
-            rating.setDidNotRead(false);
             return ratingRepository.save(rating);
         }
     }
 
-    /**
-     * Marks a book as "did not read" for a member
-     */
-    @Transactional
-    public Rating markAsDidNotRead(Long bookId, Long memberId) {
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Book not found with id: " + bookId));
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("Member not found with id: " + memberId));
-
-        // Check if rating already exists
-        Optional<Rating> existingRating = ratingRepository.findByBookIdAndMemberId(bookId, memberId);
-
-        if (existingRating.isPresent()) {
-            Rating rating = existingRating.get();
-            rating.setDidNotRead(true);
-            rating.setReadabilityRating(null);
-            rating.setContentRating(null);
-            return ratingRepository.save(rating);
-        } else {
-            Rating rating = new Rating();
-            rating.setBook(book);
-            rating.setMember(member);
-            rating.setDidNotRead(true);
-            return ratingRepository.save(rating);
-        }
-    }
+    // Removed markAsDidNotRead method as it's no longer needed
 
     public void deleteRating(Long id) {
         ratingRepository.deleteById(id);
@@ -117,9 +88,7 @@ public class RatingService {
      * Returns a map with keys "readability" and "content"
      */
     public Map<String, Double> getAverageRatings(Long bookId) {
-        List<Rating> ratings = ratingRepository.findByBookId(bookId).stream()
-                .filter(r -> !r.isDidNotRead())
-                .toList();
+        List<Rating> ratings = ratingRepository.findByBookId(bookId);
 
         if (ratings.isEmpty()) {
             return Map.of("readability", 0.0, "content", 0.0);

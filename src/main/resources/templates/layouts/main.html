@@ -40,6 +40,16 @@
                     <a class="nav-link" th:classappend="${activeTab == 'queue' ? 'active' : ''}" th:href="@{/queue}">Queue/Members</a>
                 </li>
             </ul>
+            
+            <!-- Username display -->
+            <span class="navbar-text text-light me-3" sec:authentication="name"></span>
+            
+            <!-- Admin mode toggle (only for ADMIN role) -->
+            <form th:action="@{/admin-mode/toggle}" method="post" class="d-flex me-2" sec:authorize="hasRole('ADMIN')">
+                <button type="submit" class="btn btn-sm" th:classappend="${session.adminModeEnabled ? 'btn-warning' : 'btn-outline-light'}">
+                    <span th:text="${session.adminModeEnabled ? 'Admin Mode: ON' : 'Admin Mode: OFF'}"></span>
+                </button>
+            </form>
 
             <!-- Dark mode toggle -->
             <button type="button" class="theme-toggle-btn" id="themeToggle" aria-label="Toggle dark mode">

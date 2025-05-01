@@ -19,8 +19,16 @@ public class Member {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String name;
+    private String name; // Used as username for authentication
 
+    // Authentication fields
+    @Column(nullable = false)
+    private String passwordHash;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
+    
     @OneToMany(mappedBy = "owner")
     @ToString.Exclude @EqualsAndHashCode.Exclude
     private List<Book> books = new ArrayList<>();
@@ -40,5 +48,11 @@ public class Member {
 
     public void incrementTotalPicks(){
         totalPicks++;
+    }
+    
+    // Role enum for authorization
+    public enum Role {
+        ADMIN,
+        USER
     }
 }

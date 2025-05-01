@@ -1,6 +1,7 @@
 package ca.yarbond.bookclub.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -24,5 +25,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/favicon.ico")
                 .addResourceLocations("classpath:/static/favicon.ico");
+    }
+    
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // Add admin mode interceptor
+        registry.addInterceptor(new AdminModeInterceptor());
     }
 }

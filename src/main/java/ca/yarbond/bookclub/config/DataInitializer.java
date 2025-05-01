@@ -6,6 +6,7 @@ import ca.yarbond.bookclub.model.Member;
 import ca.yarbond.bookclub.repository.BookRepository;
 import ca.yarbond.bookclub.repository.MemberRepository;
 import ca.yarbond.bookclub.service.MemberQueueService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
@@ -21,15 +22,18 @@ public class DataInitializer implements CommandLineRunner {
     private final MemberRepository memberRepository;
     private final BookRepository bookRepository;
     private final MemberQueueService memberQueueService;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public DataInitializer(
             MemberRepository memberRepository,
             BookRepository bookRepository,
-            MemberQueueService memberQueueService) {
+            MemberQueueService memberQueueService,
+            PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
         this.bookRepository = bookRepository;
         this.memberQueueService = memberQueueService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -38,7 +42,11 @@ public class DataInitializer implements CommandLineRunner {
         // Only initialize if no members exist
         if (memberRepository.count() == 0) {
             // Add members in specified order with generic names
+            // First member is admin
             Member member1 = createMember("Member1");
+            member1.setRole(Member.Role.ADMIN);
+            memberRepository.save(member1);
+            
             Member member2 = createMember("Member2");
             Member member3 = createMember("Member3");
             Member member4 = createMember("Member4");
@@ -126,6 +134,8 @@ public class DataInitializer implements CommandLineRunner {
     private Member createMember(String name) {
         Member member = new Member();
         member.setName(name);
+        member.setPasswordHash(passwordEncoder.encode(name + "123")); // Default password format: name123
+        member.setRole(Member.Role.USER);
         return memberRepository.save(member);
     }
 
@@ -133,6 +143,8 @@ public class DataInitializer implements CommandLineRunner {
         Member member = new Member();
         member.setName(name);
         member.setActive(false);
+        member.setPasswordHash(passwordEncoder.encode(name + "123")); // Default password format: name123
+        member.setRole(Member.Role.USER);
         return memberRepository.save(member);
     }
 }

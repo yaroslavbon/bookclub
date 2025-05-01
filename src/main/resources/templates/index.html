@@ -59,7 +59,8 @@
                             <button type="submit" class="btn btn-success">Mark as Completed</button>
                         </form>
 
-                        <div class="dropdown">
+                        <!-- Emergency Actions (admin mode only) -->
+                        <div class="dropdown" th:if="${session.adminModeEnabled}">
                             <button class="btn btn-outline-danger dropdown-toggle" type="button"
                                     data-bs-toggle="dropdown">
                                 Emergency Actions

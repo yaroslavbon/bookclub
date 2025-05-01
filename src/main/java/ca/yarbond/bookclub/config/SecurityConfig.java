@@ -1,17 +1,14 @@
 package ca.yarbond.bookclub.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import ca.yarbond.bookclub.service.MemberUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -19,27 +16,18 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${app.security.admin.username}")
-    private String adminUsername;
-
-    @Value("${app.security.admin.password}")
-    private String adminPassword;
-
-    @Value("${app.security.user.username}")
-    private String userUsername;
-
-    @Value("${app.security.user.password}")
-    private String userPassword;
+    @Autowired
+    private MemberUserDetailsService memberUserDetailsService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.*", "/webjars/**").permitAll()
                         .requestMatchers("/h2-console/**").hasRole("ADMIN")
-                        .requestMatchers("/files/**").authenticated() // Ensure file downloads work
-                        // Use /queue URLs for member management instead of /members
+                        .requestMatchers("/files/**").authenticated()
                         .requestMatchers("/queue/members/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -54,7 +42,8 @@ public class SecurityConfig {
                 )
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers("/h2-console/**")
-                );
+                )
+                .userDetailsService(memberUserDetailsService);
 
         // Allow frames for H2 console
         http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
@@ -65,22 +54,5 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails adminUser = User.builder()
-                .username(adminUsername)
-                .password(passwordEncoder().encode(adminPassword))
-                .roles("ADMIN", "USER")
-                .build();
-
-        UserDetails regularUser = User.builder()
-                .username(userUsername)
-                .password(passwordEncoder().encode(userPassword))
-                .roles("USER")
-                .build();
-
-        return new InMemoryUserDetailsManager(adminUser, regularUser);
     }
 }

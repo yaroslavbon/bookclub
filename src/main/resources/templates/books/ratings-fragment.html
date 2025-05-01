@@ -14,10 +14,7 @@
                         <div th:with="memberRating=${memberRatingsMap.get(member.id)}">
                             <!-- If rating exists -->
                             <div th:if="${memberRating != null}">
-                                <div th:if="${memberRating.didNotRead}" class="text-muted small">
-                                    Did not read this book
-                                </div>
-                                <div th:unless="${memberRating.didNotRead}" class="position-relative">
+                                <div class="position-relative">
                                     <div class="d-flex gap-3 text-muted small mb-2">
                                         <div><strong>Readability:</strong> <span th:text="${memberRating.readabilityRating + '/5'}">4/5</span></div>
                                         <div><strong>Content:</strong> <span th:text="${memberRating.contentRating + '/5'}">5/5</span></div>

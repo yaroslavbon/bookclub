@@ -46,7 +46,8 @@
                             <div th:each="file : ${book.filePaths.entrySet()}" class="list-group-item py-2">
                                 <div class="d-flex align-items-center">
                                     <!-- Format badge -->
-                                    <span class="badge bg-secondary me-2" th:text="${file.key.toUpperCase()}">FORMAT</span>
+                                    <span class="badge bg-secondary me-2"
+                                          th:text="${file.key.toUpperCase()}">FORMAT</span>
 
                                     <!-- Truncated filename with tooltip for full name -->
                                     <small class="text-muted text-truncate me-auto"
@@ -107,7 +108,9 @@
                                     <p class="mb-0 small text-danger">This action cannot be undone.</p>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                        Cancel
+                                    </button>
                                     <form th:action="@{/files/delete-book-file}" method="post">
                                         <input type="hidden" name="bookId" th:value="${book.id}">
                                         <input type="hidden" name="format" th:value="${file.key}">
@@ -175,127 +178,164 @@
                     <!-- Book Actions -->
                     <div class="mb-4" th:if="${book.status != null}">
                         <h6 class="fw-semibold mb-3">Book Actions</h6>
-                        <div class="d-flex gap-2">
-                            <form th:if="${book.status.name() == 'CURRENT'}" th:action="@{/books/complete-current}"
-                                  method="post">
-                                <button type="submit" class="btn btn-success">Mark as Completed</button>
+                        <!-- Mobile-friendly action buttons, flex-column on small screens -->
+                        <div class="d-flex flex-column flex-md-row gap-2 align-items-start">
+
+                            <!-- Mark as Completed button -->
+                            <form th:if="${book.status.name() == 'CURRENT'}"
+                                  th:action="@{/books/complete-current}" method="post"
+                                  class="mb-2 mb-md-0 w-100 w-md-auto">
+                                <button type="submit" class="btn btn-success w-100 w-md-auto"
+                                        th:disabled="${!session.adminModeEnabled && readCount < requiredReaders}">
+                                    Mark as Completed
+                                </button>
+                            </form>
+
+                            <!-- Finished Reading button (when not finished) -->
+                            <form th:if="${(book.status.name() == 'CURRENT' || book.status.name() == 'COMPLETED') && !hasFinishedReading}"
+                                  th:action="@{/books/{id}/finished-reading(id=${book.id})}" method="post"
+                                  class="mb-2 mb-md-0 w-100 w-md-auto">
+                                <button type="submit" class="btn btn-primary w-100 w-md-auto">Finished Reading</button>
+                            </form>
+
+                            <!-- Did Not Read button (when finished) -->
+                            <form th:if="${(book.status.name() == 'CURRENT' || book.status.name() == 'COMPLETED') && hasFinishedReading}"
+                                  th:action="@{/books/{id}/did-not-read(id=${book.id})}" method="post"
+                                  class="mb-2 mb-md-0 w-100 w-md-auto">
+                                <button type="submit" class="btn btn-outline-secondary w-100 w-md-auto">Unmark as Read
+                                </button>
                             </form>
 
                             <form th:if="${book.status.name() == 'WISHLIST'}"
-                                  th:action="@{/books/{id}/set-next(id=${book.id})}" method="post">
-                                <button type="submit" class="btn btn-primary">Set as Next Book</button>
+                                  th:action="@{/books/{id}/set-next(id=${book.id})}" method="post"
+                                  class="mb-2 mb-md-0 w-100 w-md-auto">
+                                <button type="submit" class="btn btn-primary w-100 w-md-auto">Set as Next Book</button>
                             </form>
 
                             <a th:if="${book.status.name() == 'COMPLETED'}" href="#rate"
-                               class="btn btn-outline-primary">
+                               class="btn btn-outline-primary mb-2 mb-md-0 w-100 w-md-auto text-center">
                                 Rate Book
                             </a>
-
-                            <a th:href="@{/books/{id}/did-not-read(id=${book.id})}" class="btn btn-outline-secondary"
-                               data-bs-toggle="modal" data-bs-target="#didNotReadModal">Did Not Read</a>
                         </div>
+
+                        <!-- Help text for disabled Mark as Completed button -->
+                        <div th:if="${book.status.name() == 'CURRENT' && !session.adminModeEnabled && readCount < requiredReaders}"
+                             class="text-muted small mt-2">
+                            Book can be marked as completed when half of the bookclub members finish reading it.
+                        </div>
+
+                        <!-- Reading completion progress indicator -->
+                        <div th:if="${book.status.name() == 'CURRENT'}"
+                             class="mb-2 mb-md-0 ms-0 ms-md-2 mt-0 mt-md-2 w-100 w-md-auto">
+                            <span class="badge bg-info"
+                                  th:text="${readCount + ' of ' + activeMembers + ' members finished'}"></span>
+                        </div>
+
                     </div>
+                </div>
 
-                    <!-- Ratings Section -->
-                    <div th:if="${book.status != null && book.status.name() == 'COMPLETED'}" class="mb-3" id="rate">
-                        <h4 class="fs-5 fw-semibold mb-3">Member Ratings</h4>
+                <!-- Ratings Section -->
+                <div th:if="${book.status != null && book.status.name() == 'COMPLETED'}" class="mb-3" id="rate">
+                    <h4 class="fs-5 fw-semibold mb-3">Member Ratings</h4>
 
 
-                        <!-- Existing Ratings -->
-                        <div th:if="${!#lists.isEmpty(ratings)}">
-                            <h5 class="fs-6 fw-semibold mb-3">Existing Ratings</h5>
-                            <div class="list-group mb-4">
-                                <div th:each="rating : ${ratings}" class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <h6 class="mb-1 fw-semibold" th:text="${rating.member.name}">Member Name</h6>
-                                        <div th:if="${rating.didNotRead}" class="badge bg-secondary">Did Not Read</div>
-                                    </div>
+                    <!-- Existing Ratings -->
+                    <div th:if="${!#lists.isEmpty(ratings)}">
+                        <h5 class="fs-6 fw-semibold mb-3">Existing Ratings</h5>
+                        <div class="list-group mb-4">
+                            <div th:each="rating : ${ratings}" class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1 fw-semibold" th:text="${rating.member.name}">Member Name</h6>
+                                </div>
 
-                                    <div th:unless="${rating.didNotRead}" class="position-relative">
-                                        <div class="d-flex gap-3 text-muted small mb-2">
-                                            <div><strong>Readability:</strong> <span th:text="${rating.readabilityRating + '/5'}">4/5</span></div>
-                                            <div><strong>Content:</strong> <span th:text="${rating.contentRating + '/5'}">5/5</span></div>
+                                <div class="position-relative">
+                                    <div class="d-flex gap-3 text-muted small mb-2">
+                                        <div><strong>Readability:</strong> <span
+                                                th:text="${rating.readabilityRating + '/5'}">4/5</span></div>
+                                        <div><strong>Content:</strong> <span th:text="${rating.contentRating + '/5'}">5/5</span>
                                         </div>
-                                        <p th:if="${rating.comments}" class="mb-0 small text-muted" th:text="${rating.comments}">Comments</p>
-
-                                        <!-- Delete button positioned at the top-right -->
-                                        <form th:action="@{/books/ratings/{id}/delete(id=${rating.id})}" method="post"
-                                              class="position-absolute top-0 end-0">
-                                            <input type="hidden" th:name="bookId" th:value="${book.id}">
-                                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                Delete
-                                            </button>
-                                        </form>
                                     </div>
+                                    <p th:if="${rating.comments}" class="mb-0 small text-muted"
+                                       th:text="${rating.comments}">Comments</p>
+
+                                    <!-- Delete button positioned at the top-right -->
+                                    <form th:action="@{/books/ratings/{id}/delete(id=${rating.id})}" method="post"
+                                          class="position-absolute top-0 end-0">
+                                        <input type="hidden" th:name="bookId" th:value="${book.id}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
-                        <div th:if="${#lists.isEmpty(ratings)}" class="alert alert-light">
-                            No ratings have been submitted yet.
+                    </div>
+                    <div th:if="${#lists.isEmpty(ratings)}" class="alert alert-light">
+                        No ratings have been submitted yet.
+                    </div>
+
+                    <!-- Add Rating Form -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="fs-6 fw-semibold mb-0">Add or Update Your Rating</h5>
                         </div>
-
-                        <!-- Add Rating Form -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h5 class="fs-6 fw-semibold mb-0">Add or Update Your Rating</h5>
-                            </div>
-                            <div class="card-body">
-                                <form th:action="@{/books/{id}/rate(id=${book.id})}" method="post">
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="memberId" class="form-label">Member</label>
-                                            <select class="form-select" id="memberId" name="memberId" required>
-                                                <option value="">Select your name</option>
-                                                <option th:each="member : ${members}" th:value="${member.id}"
-                                                        th:text="${member.name}">Member
-                                                </option>
-                                            </select>
-                                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/books/{id}/rate(id=${book.id})}" method="post">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="memberId" class="form-label">Member</label>
+                                        <select class="form-select" id="memberId" name="memberId" required>
+                                            <option value="">Select your name</option>
+                                            <option th:each="member : ${members}" th:value="${member.id}"
+                                                    th:text="${member.name}">Member
+                                            </option>
+                                        </select>
                                     </div>
+                                </div>
 
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="readabilityRating" class="form-label">Readability Rating</label>
-                                            <select class="form-select" id="readabilityRating" name="readabilityRating"
-                                                    required>
-                                                <option value="">Select a rating</option>
-                                                <option value="1">1 - Poor</option>
-                                                <option value="2">2 - Fair</option>
-                                                <option value="3">3 - Good</option>
-                                                <option value="4">4 - Very Good</option>
-                                                <option value="5">5 - Excellent</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="contentRating" class="form-label">Content Rating</label>
-                                            <select class="form-select" id="contentRating" name="contentRating"
-                                                    required>
-                                                <option value="">Select a rating</option>
-                                                <option value="1">1 - Poor</option>
-                                                <option value="2">2 - Fair</option>
-                                                <option value="3">3 - Good</option>
-                                                <option value="4">4 - Very Good</option>
-                                                <option value="5">5 - Excellent</option>
-                                            </select>
-                                        </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="readabilityRating" class="form-label">Readability Rating</label>
+                                        <select class="form-select" id="readabilityRating" name="readabilityRating"
+                                                required>
+                                            <option value="">Select a rating</option>
+                                            <option value="1">1 - Poor</option>
+                                            <option value="2">2 - Fair</option>
+                                            <option value="3">3 - Good</option>
+                                            <option value="4">4 - Very Good</option>
+                                            <option value="5">5 - Excellent</option>
+                                        </select>
                                     </div>
+                                    <div class="col-md-6">
+                                        <label for="contentRating" class="form-label">Content Rating</label>
+                                        <select class="form-select" id="contentRating" name="contentRating"
+                                                required>
+                                            <option value="">Select a rating</option>
+                                            <option value="1">1 - Poor</option>
+                                            <option value="2">2 - Fair</option>
+                                            <option value="3">3 - Good</option>
+                                            <option value="4">4 - Very Good</option>
+                                            <option value="5">5 - Excellent</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-                                    <div class="mb-3">
-                                        <label for="comments" class="form-label">Comments</label>
-                                        <textarea class="form-control" id="comments" name="comments"
-                                                  rows="3"></textarea>
-                                    </div>
+                                <div class="mb-3">
+                                    <label for="comments" class="form-label">Comments</label>
+                                    <textarea class="form-control" id="comments" name="comments"
+                                              rows="3"></textarea>
+                                </div>
 
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">Submit Rating</button>
-                                    </div>
-                                </form>
-                            </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">Submit Rating</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Delete Book Modal -->
@@ -316,36 +356,6 @@
                         <button type="submit" class="btn btn-danger">Delete Book</button>
                     </form>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Did Not Read Modal -->
-    <div class="modal fade" id="didNotReadModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Mark as Did Not Read</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form th:action="@{/books/{id}/did-not-read(id=${book.id})}" method="post">
-                    <div class="modal-body">
-                        <p>Please select your name to mark that you did not read this book:</p>
-                        <div class="mb-3">
-                            <label for="dnrMemberId" class="form-label">Member</label>
-                            <select class="form-select" id="dnrMemberId" name="memberId" required>
-                                <option value="">Select your name</option>
-                                <option th:each="member : ${members}" th:value="${member.id}" th:text="${member.name}">
-                                    Member
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Confirm</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

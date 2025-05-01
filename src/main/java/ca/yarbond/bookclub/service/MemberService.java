@@ -3,6 +3,7 @@ package ca.yarbond.bookclub.service;
 import ca.yarbond.bookclub.model.Member;
 import ca.yarbond.bookclub.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,11 +14,13 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final MemberQueueService memberQueueService;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public MemberService(MemberRepository memberRepository, MemberQueueService memberQueueService) {
+    public MemberService(MemberRepository memberRepository, MemberQueueService memberQueueService, PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
         this.memberQueueService = memberQueueService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -25,6 +28,15 @@ public class MemberService {
      */
     public List<Member> getAllMembers() {
         return memberRepository.findAll();
+    }
+    
+    /**
+     * Get all active members
+     */
+    public List<Member> getActiveMembers() {
+        return memberRepository.findAll().stream()
+                .filter(Member::isActive)
+                .toList();
     }
 
     /**
@@ -55,13 +67,16 @@ public class MemberService {
      * Note: Active members are automatically added to queue by the controller
      */
     @Transactional
-    public Member createMember(Member member) {
+    public Member createMember(Member member, String password) {
         if (memberRepository.existsByName(member.getName())) {
             throw new RuntimeException("Member with name '" + member.getName() + "' already exists");
         }
 
-        // Default to active
+        // Default to active and user role
         member.setActive(true);
+        member.setRole(Member.Role.USER);
+        member.setPasswordHash(passwordEncoder.encode(password));
+        
         Member createdMember = memberRepository.save(member);
         memberQueueService.addMemberToQueue(createdMember.getId());
         return createdMember;
@@ -84,6 +99,40 @@ public class MemberService {
         member.setName(newName);
 
         return memberRepository.save(member);
+    }
+    
+    /**
+     * Reset member password
+     */
+    @Transactional
+    public String resetPassword(Long id) {
+        Member member = getMemberById(id);
+        
+        // Generate a random password
+        String newPassword = generateRandomPassword();
+        
+        // Update password hash
+        member.setPasswordHash(passwordEncoder.encode(newPassword));
+        memberRepository.save(member);
+        
+        return newPassword;
+    }
+    
+    /**
+     * Generate a cryptographically strong random password
+     */
+    public String generateRandomPassword() {
+        // Create a random password of length 10
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+";
+        StringBuilder sb = new StringBuilder();
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        
+        for (int i = 0; i < 10; i++) {
+            int randomIndex = random.nextInt(chars.length());
+            sb.append(chars.charAt(randomIndex));
+        }
+        
+        return sb.toString();
     }
 
 

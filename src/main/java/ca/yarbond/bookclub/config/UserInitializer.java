@@ -1,18 +1,24 @@
 package ca.yarbond.bookclub.config;
 
-import ca.yarbond.bookclub.model.User;
-import ca.yarbond.bookclub.repository.UserRepository;
+import ca.yarbond.bookclub.model.Member;
+import ca.yarbond.bookclub.repository.MemberRepository;
+import ca.yarbond.bookclub.service.MemberQueueService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@Profile("prod") // Only active in production environment
 public class UserInitializer implements ApplicationRunner {
 
-    private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MemberQueueService memberQueueService;
 
     @Value("${app.security.admin.username:admin}")
     private String adminUsername;
@@ -20,32 +26,28 @@ public class UserInitializer implements ApplicationRunner {
     @Value("${app.security.admin.password:admin}")
     private String adminPassword;
 
-    @Value("${app.security.user.username:user}")
-    private String userUsername;
-
-    @Value("${app.security.user.password:user}")
-    private String userPassword;
-
-    public UserInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
+    @Autowired
+    public UserInitializer(MemberRepository memberRepository, 
+                          PasswordEncoder passwordEncoder,
+                          MemberQueueService memberQueueService) {
+        this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
+        this.memberQueueService = memberQueueService;
     }
 
     @Override
+    @Transactional
     public void run(ApplicationArguments args) {
-        // Only initialize if no users exist
-        if (userRepository.count() == 0) {
-            User adminUser = new User();
-            adminUser.setUsername(adminUsername);
-            adminUser.setPasswordHash(passwordEncoder.encode(adminPassword));
-            adminUser.setRole(User.Role.ADMIN);
-            userRepository.save(adminUser);
-
-            User regularUser = new User();
-            regularUser.setUsername(userUsername);
-            regularUser.setPasswordHash(passwordEncoder.encode(userPassword));
-            regularUser.setRole(User.Role.USER);
-            userRepository.save(regularUser);
+        if (args.containsOption("set-admin")) {
+            Member adminMember = memberRepository.findByName(adminUsername).orElseGet(Member::new);
+            adminMember.setName(adminUsername);
+            adminMember.setPasswordHash(passwordEncoder.encode(adminPassword));
+            adminMember.setRole(Member.Role.ADMIN);
+            adminMember.setActive(true);
+            Member savedMember = memberRepository.save(adminMember);
+            
+            // Add admin to the queue
+            memberQueueService.addMemberToQueue(savedMember.getId());
         }
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
@@ -136,10 +137,14 @@ public class QueueController {
     public String createMember(@ModelAttribute Member member,
                                RedirectAttributes redirectAttributes) {
         try {
-            Member createdMember = memberService.createMember(member);
+            // Generate a random password
+            String generatedPassword = memberService.generateRandomPassword();
+            Member createdMember = memberService.createMember(member, generatedPassword);
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Member '" + createdMember.getName() + "' created and added to queue");
+            redirectAttributes.addFlashAttribute("generatedPassword", generatedPassword);
+            redirectAttributes.addFlashAttribute("newMemberId", createdMember.getId());
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
@@ -192,6 +197,22 @@ public class QueueController {
             String deletedMemberName = memberService.deleteMember(id);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Member '" + deletedMemberName + "' deleted successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/queue";
+    }
+    
+    @PostMapping("/members/{id}/reset-password")
+    public String resetMemberPassword(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            Member member = memberService.getMemberById(id);
+            String newPassword = memberService.resetPassword(id);
+            
+            redirectAttributes.addFlashAttribute("successMessage", 
+                    "Password for member '" + member.getName() + "' has been reset");
+            redirectAttributes.addFlashAttribute("resetPasswordFor", member.getId());
+            redirectAttributes.addFlashAttribute("resetPassword", newPassword);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }

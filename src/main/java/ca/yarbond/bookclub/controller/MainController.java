@@ -2,18 +2,23 @@ package ca.yarbond.bookclub.controller;
 
 import ca.yarbond.bookclub.model.Book;
 import ca.yarbond.bookclub.model.BookStatus;
+import ca.yarbond.bookclub.model.Member;
 import ca.yarbond.bookclub.model.MemberQueueItem;
+import ca.yarbond.bookclub.service.BookCompletionService;
 import ca.yarbond.bookclub.service.BookService;
 import ca.yarbond.bookclub.service.MemberQueueService;
 import ca.yarbond.bookclub.service.MemberService;
 import ca.yarbond.bookclub.service.RatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Map;
@@ -26,14 +31,17 @@ public class MainController {
     private final RatingService ratingService;
     private final MemberQueueService memberQueueService;
     private final MemberService memberService;
+    private final BookCompletionService bookCompletionService;
 
     @Autowired
     public MainController(BookService bookService, RatingService ratingService,
-                          MemberQueueService memberQueueService, MemberService memberService) {
+                          MemberQueueService memberQueueService, MemberService memberService,
+                          BookCompletionService bookCompletionService) {
         this.bookService = bookService;
         this.ratingService = ratingService;
         this.memberQueueService = memberQueueService;
         this.memberService = memberService;
+        this.bookCompletionService = bookCompletionService;
     }
 
     @GetMapping("/")
@@ -94,8 +102,55 @@ public class MainController {
 
     // Handle book completion via form POST
     @PostMapping("/books/complete-current")
-    public String completeCurrentBook() {
-        bookService.completeCurrentBook();
+    public String completeCurrentBook(RedirectAttributes redirectAttributes) {
+        try {
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Member currentMember = memberService.getMemberByName(auth.getName());
+            
+            // Get current book
+            Book currentBook = bookService.getCurrentBook();
+            
+            if (currentBook == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "No current book found");
+                return "redirect:/";
+            }
+            
+            // Check if user is admin (admin can always complete a book)
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            
+            if (!isAdmin) {
+                // Regular user validations:
+                
+                // 1. Check if user has read the book
+                boolean hasRead = bookCompletionService.hasReadBook(currentBook.getId(), currentMember.getId());
+                if (!hasRead) {
+                    redirectAttributes.addFlashAttribute("errorMessage", 
+                            "You must mark the book as read before marking it as completed");
+                    return "redirect:/books/" + currentBook.getId();
+                }
+                
+                // 2. Check if enough members have read the book
+                int readCount = bookCompletionService.getReadCountForBook(currentBook.getId());
+                int activeMembers = memberService.getActiveMembers().size();
+                int requiredReaders = Math.max(1, (int) Math.ceil(activeMembers * 0.5)); // 50%, minimum 1
+                
+                if (readCount < requiredReaders) {
+                    redirectAttributes.addFlashAttribute("errorMessage", 
+                            "Not enough members have finished reading this book yet");
+                    return "redirect:/books/" + currentBook.getId();
+                }
+            }
+            
+            // All checks pass, complete the book
+            bookService.completeCurrentBook();
+            redirectAttributes.addFlashAttribute("successMessage", "Book marked as completed");
+            
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
+        }
+        
         return "redirect:/";
     }
 
