@@ -58,6 +58,27 @@ public class MainController {
         }
         model.addAttribute("currentBook", currentBook);
         model.addAttribute("nextBook", nextBook);
+        
+        // Add reading progress information for the current book
+        if (currentBook != null) {
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Member currentMember = memberService.getMemberByName(auth.getName());
+            
+            // Get book completion records and counts
+            boolean hasFinishedReading = bookCompletionService.hasReadBook(currentBook.getId(), currentMember.getId());
+            int readCount = bookCompletionService.getReadCountForBook(currentBook.getId());
+            int activeMembers = memberService.getActiveMembers().size();
+            int requiredReaders = Math.max(1, (int) Math.ceil(activeMembers * 0.5)); // 50%, minimum 1
+            List<Member> membersWhoRead = bookCompletionService.getMembersWhoReadBook(currentBook.getId());
+            
+            model.addAttribute("currentMember", currentMember);
+            model.addAttribute("hasFinishedReading", hasFinishedReading);
+            model.addAttribute("readCount", readCount);
+            model.addAttribute("activeMembers", activeMembers);
+            model.addAttribute("requiredReaders", requiredReaders);
+            model.addAttribute("membersWhoRead", membersWhoRead);
+        }
 
         // Get current member's other wishlist books (for replace functionality)
         if (currentBook != null && currentBook.getOwner() != null) {

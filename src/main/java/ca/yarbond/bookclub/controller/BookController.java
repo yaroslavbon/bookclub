@@ -93,11 +93,12 @@ public class BookController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Member currentMember = memberService.getMemberByName(auth.getName());
         
-        // Get book completion records and counts
+        // Get book completion records and counts - for all book statuses
         boolean hasFinishedReading = bookCompletionService.hasReadBook(id, currentMember.getId());
         int readCount = bookCompletionService.getReadCountForBook(id);
         int activeMembers = memberService.getActiveMembers().size();
         int requiredReaders = Math.max(1, (int) Math.ceil(activeMembers * 0.5)); // 50%, minimum 1
+        List<Member> membersWhoRead = bookCompletionService.getMembersWhoReadBook(id);
         
         model.addAttribute("book", book);
         model.addAttribute("ratings", ratings);
@@ -108,6 +109,7 @@ public class BookController {
         model.addAttribute("readCount", readCount);
         model.addAttribute("activeMembers", activeMembers);
         model.addAttribute("requiredReaders", requiredReaders);
+        model.addAttribute("membersWhoRead", membersWhoRead);
         model.addAttribute("activeTab", "books");
 
         return "books/detail";
@@ -303,7 +305,9 @@ public class BookController {
     }
 
     @PostMapping("/{id}/did-not-read")
-    public String markAsDidNotRead(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String markAsDidNotRead(@PathVariable Long id, 
+                                  @RequestParam(required = false) String redirect,
+                                  RedirectAttributes redirectAttributes) {
         try {
             // Get current authenticated user
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -319,7 +323,7 @@ public class BookController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
         }
-        return "redirect:/books/" + id;
+        return getRedirectUrl(redirect, id);
     }
 
     @PostMapping("/{id}/set-next")
@@ -382,7 +386,9 @@ public class BookController {
     }
     
     @PostMapping("/{id}/finished-reading")
-    public String markAsFinishedReading(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String markAsFinishedReading(@PathVariable Long id, 
+                                       @RequestParam(required = false) String redirect,
+                                       RedirectAttributes redirectAttributes) {
         try {
             Book book = bookService.getBookById(id);
 
@@ -394,7 +400,7 @@ public class BookController {
             if (bookCompletionService.hasReadBook(id, member.getId())) {
                 redirectAttributes.addFlashAttribute("warningMessage", 
                         "You have already marked this book as finished reading");
-                return "redirect:/books/" + id;
+                return getRedirectUrl(redirect, id);
             }
             
             // Mark book as read
@@ -406,6 +412,13 @@ public class BookController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/books/" + id;
+        return getRedirectUrl(redirect, id);
+    }
+    
+    /**
+     * Helper method to determine redirect URL
+     */
+    private String getRedirectUrl(String redirect, Long id) {
+        return "home".equals(redirect) ? "redirect:/" : "redirect:/books/" + id;
     }
 }

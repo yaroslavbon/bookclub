@@ -65,6 +65,17 @@ public class BookCompletionService {
         return bookCompletionRepository.findByBookId(bookId);
     }
     
+    /**
+     * Gets the list of members who have read a book
+     */
+    @Transactional(readOnly = true)
+    public List<Member> getMembersWhoReadBook(Long bookId) {
+        List<BookCompletionRecord> records = bookCompletionRepository.findByBookId(bookId);
+        return records.stream()
+                .map(BookCompletionRecord::getMember)
+                .toList();
+    }
+    
     @Transactional(readOnly = true)
     public boolean hasReadBook(Long bookId, Long memberId) {
         return bookCompletionRepository.existsByBookIdAndMemberId(bookId, memberId);

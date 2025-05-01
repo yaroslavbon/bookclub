@@ -191,25 +191,28 @@
                                 </button>
                             </form>
 
-                            <!-- Finished Reading button (when not finished) -->
-                            <form th:if="${(book.status.name() == 'CURRENT' || book.status.name() == 'COMPLETED') && !hasFinishedReading}"
+                            <!-- Finished Reading button (when not finished) - for all statuses -->
+                            <form th:if="${!hasFinishedReading}"
                                   th:action="@{/books/{id}/finished-reading(id=${book.id})}" method="post"
                                   class="mb-2 mb-md-0 w-100 w-md-auto">
-                                <button type="submit" class="btn btn-primary w-100 w-md-auto">Finished Reading</button>
+                                <button type="submit" class="btn btn-primary w-100 w-md-auto"
+                                        th:text="${book.status.name() == 'CURRENT'} ? 'Finished Reading' : 'I\'ve read this book'">
+                                    Reading Status
+                                </button>
                             </form>
 
-                            <!-- Did Not Read button (when finished) -->
-                            <form th:if="${(book.status.name() == 'CURRENT' || book.status.name() == 'COMPLETED') && hasFinishedReading}"
+                            <!-- Did Not Read button (when finished) - for all statuses -->
+                            <form th:if="${hasFinishedReading}"
                                   th:action="@{/books/{id}/did-not-read(id=${book.id})}" method="post"
                                   class="mb-2 mb-md-0 w-100 w-md-auto">
                                 <button type="submit" class="btn btn-outline-secondary w-100 w-md-auto">Unmark as Read
                                 </button>
                             </form>
 
-                            <form th:if="${book.status.name() == 'WISHLIST'}"
+                            <form th:if="${book.status.name() == 'WISHLIST' && session.adminModeEnabled}"
                                   th:action="@{/books/{id}/set-next(id=${book.id})}" method="post"
                                   class="mb-2 mb-md-0 w-100 w-md-auto">
-                                <button type="submit" class="btn btn-primary w-100 w-md-auto">Set as Next Book</button>
+                                <button type="submit" class="btn btn-success w-100 w-md-auto">Set as Next Book</button>
                             </form>
 
                             <a th:if="${book.status.name() == 'COMPLETED'}" href="#rate"
@@ -218,17 +221,23 @@
                             </a>
                         </div>
 
-                        <!-- Help text for disabled Mark as Completed button -->
+                        <!-- Help text for disabled Mark as Completed button (only for CURRENT books) -->
                         <div th:if="${book.status.name() == 'CURRENT' && !session.adminModeEnabled && readCount < requiredReaders}"
                              class="text-muted small mt-2">
                             Book can be marked as completed when half of the bookclub members finish reading it.
                         </div>
 
-                        <!-- Reading completion progress indicator -->
-                        <div th:if="${book.status.name() == 'CURRENT'}"
-                             class="mb-2 mb-md-0 ms-0 ms-md-2 mt-0 mt-md-2 w-100 w-md-auto">
-                            <span class="badge bg-info"
-                                  th:text="${readCount + ' of ' + activeMembers + ' members finished'}"></span>
+                        <!-- Reading completion indicator (for all statuses) -->
+                        <div class="mb-2 mb-md-0 ms-0 ms-md-2 mt-3 w-100">
+                            <h6 class="fw-semibold small">Members who have read this book:</h6>
+                            <div th:if="${!#lists.isEmpty(membersWhoRead)}" class="d-flex flex-wrap gap-1 mt-1">
+                                <span th:each="member : ${membersWhoRead}" class="badge bg-primary">
+                                    <span th:text="${member.name}">Member Name</span>
+                                </span>
+                            </div>
+                            <div th:if="${#lists.isEmpty(membersWhoRead)}" class="text-muted small">
+                                No one has read this book yet.
+                            </div>
                         </div>
 
                     </div>
