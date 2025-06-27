@@ -42,3 +42,6 @@ book-files/
 cover-images/
 bookclub_db.mv.db
 bookclub_db.trace.db
+
+### Environment files ###
+.env
