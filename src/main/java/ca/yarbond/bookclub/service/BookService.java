@@ -224,6 +224,7 @@ public class BookService {
         book.setTitle(bookDetails.getTitle());
         book.setAuthor(bookDetails.getAuthor());
         book.setFiction(bookDetails.isFiction());
+        book.setPageCount(bookDetails.getPageCount());
 
         // Only update owner if provided and different
         if (bookDetails.getOwner() != null && bookDetails.getOwner().getId() != null &&

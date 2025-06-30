@@ -28,16 +28,12 @@ public class BookSearchController {
     /**
      * Search for books using Google Books API
      *
-     * @param query    The search query text
-     * @param language The preferred language code, defaults to "ru"
+     * @param query The search query text
      * @return List of book search results
      */
     @GetMapping
-    public ResponseEntity<List<BookSearchDto>> searchBooks(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "ru") String language) {
-
-        List<BookSearchDto> results = googleBooksService.searchBooks(query, language);
+    public ResponseEntity<List<BookSearchDto>> searchBooks(@RequestParam String query) {
+        List<BookSearchDto> results = googleBooksService.searchBooks(query);
         return ResponseEntity.ok(results);
     }
 }

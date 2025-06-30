@@ -95,9 +95,7 @@ public class BookController {
         
         // Get book completion records and counts - for all book statuses
         boolean hasFinishedReading = bookCompletionService.hasReadBook(id, currentMember.getId());
-        int readCount = bookCompletionService.getReadCountForBook(id);
-        int activeMembers = memberService.getActiveMembers().size();
-        int requiredReaders = Math.max(1, (int) Math.ceil(activeMembers * 0.5)); // 50%, minimum 1
+        boolean isCompletable = bookCompletionService.isBookCompletable(id);
         List<Member> membersWhoRead = bookCompletionService.getMembersWhoReadBook(id);
         
         model.addAttribute("book", book);
@@ -106,9 +104,7 @@ public class BookController {
         model.addAttribute("members", memberService.getAllMembers());
         model.addAttribute("currentMember", currentMember);
         model.addAttribute("hasFinishedReading", hasFinishedReading);
-        model.addAttribute("readCount", readCount);
-        model.addAttribute("activeMembers", activeMembers);
-        model.addAttribute("requiredReaders", requiredReaders);
+        model.addAttribute("isCompletable", isCompletable);
         model.addAttribute("membersWhoRead", membersWhoRead);
         model.addAttribute("activeTab", "books");
 

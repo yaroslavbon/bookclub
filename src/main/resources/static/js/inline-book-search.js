@@ -11,7 +11,6 @@ const InlineBookSearch = (function() {
         searchTitleInputId: 'bookSearchTitle',
         searchAuthorInputId: 'bookSearchAuthor',
         searchIsbnInputId: 'bookSearchIsbn',
-        searchLanguageName: 'bookSearchLanguage',
         searchButtonId: 'executeBookSearch',
         searchResultsContainerId: 'searchResults',
         searchLoadingId: 'searchLoading',
@@ -109,15 +108,6 @@ const InlineBookSearch = (function() {
             const author = searchAuthor ? searchAuthor.value.trim() : '';
             const isbn = searchIsbn ? searchIsbn.value.trim() : '';
 
-            // Get selected language
-            const languageRadios = document.getElementsByName(options.searchLanguageName);
-            let language = 'ru'; // Default to Russian
-            for (const radio of languageRadios) {
-                if (radio.checked) {
-                    language = radio.value;
-                    break;
-                }
-            }
 
             // Validate that at least one search field has content
             if (!title && !author && !isbn) {
@@ -140,7 +130,7 @@ const InlineBookSearch = (function() {
             searchLoading.style.display = 'block';
 
             // Call our API endpoint
-            fetch(`${contextPath}/api/book-search?query=${encodeURIComponent(query)}&language=${language}`)
+            fetch(`${contextPath}/api/book-search?query=${encodeURIComponent(query)}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Search request failed');

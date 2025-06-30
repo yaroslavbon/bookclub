@@ -113,4 +113,25 @@ public class BookCompletionService {
             }
         }
     }
+    
+    /**
+     * Calculate the minimum number of readers required to mark a book as completed.
+     * Logic: All but one member (total active members - 1), with a minimum of 1.
+     */
+    @Transactional(readOnly = true)
+    public int getRequiredReadersCount() {
+        int activeMembers = memberService.getActiveMembers().size();
+        return Math.max(1, activeMembers - 1); // All but one member, minimum 1
+    }
+    
+    /**
+     * Check if a book can be marked as completed based on the number of readers.
+     * Returns true if enough members have read the book.
+     */
+    @Transactional(readOnly = true)
+    public boolean isBookCompletable(Long bookId) {
+        int readCount = getReadCountForBook(bookId);
+        int requiredReaders = getRequiredReadersCount();
+        return readCount >= requiredReaders;
+    }
 }

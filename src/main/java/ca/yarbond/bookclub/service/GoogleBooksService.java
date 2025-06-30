@@ -51,11 +51,10 @@ public class GoogleBooksService {
     /**
      * Search for books using Google Books API
      *
-     * @param query    The search query text
-     * @param language The preferred language code (e.g., "ru", "uk", "en")
+     * @param query The search query text
      * @return List of book search results
      */
-    public List<BookSearchDto> searchBooks(String query, String language) {
+    public List<BookSearchDto> searchBooks(String query) {
         if (query == null || query.trim().isEmpty()) {
             return Collections.emptyList();
         }
@@ -64,7 +63,7 @@ public class GoogleBooksService {
         cleanExpiredCache();
 
         // Check cache first
-        String cacheKey = query.toLowerCase() + "_" + language;
+        String cacheKey = query.toLowerCase();
         if (searchCache.containsKey(cacheKey)) {
             logger.debug("Cache hit for query: {}", query);
             return searchCache.get(cacheKey);
@@ -72,14 +71,10 @@ public class GoogleBooksService {
 
 
         try {
-            // Build search URL with language preference
+            // Build search URL
             UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(API_BASE_URL)
                     .queryParam("q", query)
                     .queryParam("maxResults", 10);
-
-            if (language != null && !language.trim().isEmpty()) {
-                builder.queryParam("langRestrict", language);
-            }
 
             if (apiKey != null && !apiKey.trim().isEmpty()) {
                 builder.queryParam("key", apiKey);

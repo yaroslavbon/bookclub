@@ -186,7 +186,7 @@
                                   th:action="@{/books/complete-current}" method="post"
                                   class="mb-2 mb-md-0 w-100 w-md-auto">
                                 <button type="submit" class="btn btn-success w-100 w-md-auto"
-                                        th:disabled="${!session.adminModeEnabled && readCount < requiredReaders}">
+                                        th:disabled="${!session.adminModeEnabled && !isCompletable}">
                                     Mark as Completed
                                 </button>
                             </form>
@@ -222,9 +222,9 @@
                         </div>
 
                         <!-- Help text for disabled Mark as Completed button (only for CURRENT books) -->
-                        <div th:if="${book.status.name() == 'CURRENT' && !session.adminModeEnabled && readCount < requiredReaders}"
+                        <div th:if="${book.status.name() == 'CURRENT' && !session.adminModeEnabled && !isCompletable}"
                              class="text-muted small mt-2">
-                            Book can be marked as completed when half of the bookclub members finish reading it.
+                            Book can be marked as completed when all but one bookclub member finish reading it.
                         </div>
 
                         <!-- Reading completion indicator (for all statuses) -->

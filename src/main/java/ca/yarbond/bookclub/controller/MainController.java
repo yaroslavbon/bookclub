@@ -67,16 +67,12 @@ public class MainController {
             
             // Get book completion records and counts
             boolean hasFinishedReading = bookCompletionService.hasReadBook(currentBook.getId(), currentMember.getId());
-            int readCount = bookCompletionService.getReadCountForBook(currentBook.getId());
-            int activeMembers = memberService.getActiveMembers().size();
-            int requiredReaders = Math.max(1, (int) Math.ceil(activeMembers * 0.5)); // 50%, minimum 1
+            boolean isCompletable = bookCompletionService.isBookCompletable(currentBook.getId());
             List<Member> membersWhoRead = bookCompletionService.getMembersWhoReadBook(currentBook.getId());
             
             model.addAttribute("currentMember", currentMember);
             model.addAttribute("hasFinishedReading", hasFinishedReading);
-            model.addAttribute("readCount", readCount);
-            model.addAttribute("activeMembers", activeMembers);
-            model.addAttribute("requiredReaders", requiredReaders);
+            model.addAttribute("isCompletable", isCompletable);
             model.addAttribute("membersWhoRead", membersWhoRead);
         }
 
@@ -153,11 +149,9 @@ public class MainController {
                 }
                 
                 // 2. Check if enough members have read the book
-                int readCount = bookCompletionService.getReadCountForBook(currentBook.getId());
-                int activeMembers = memberService.getActiveMembers().size();
-                int requiredReaders = Math.max(1, (int) Math.ceil(activeMembers * 0.5)); // 50%, minimum 1
+                boolean isCompletable = bookCompletionService.isBookCompletable(currentBook.getId());
                 
-                if (readCount < requiredReaders) {
+                if (!isCompletable) {
                     redirectAttributes.addFlashAttribute("errorMessage", 
                             "Not enough members have finished reading this book yet");
                     return "redirect:/books/" + currentBook.getId();
